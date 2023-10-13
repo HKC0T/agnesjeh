@@ -47,7 +47,7 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   role    Role     @default(USER)
-  groups UserGroup[]
+  teams Team[]
   accounts      Account[]
   sessions      Session[]
   jobs  Job[]
@@ -62,14 +62,15 @@ model VerificationToken {
 }
 
 
-model UserGroup {
-  id      Int      @id @default(autoincrement())
-  groupName   String   @unique
+model Team {
+  id      String    @id @default(cuid())
+  name   String   @unique
   users User[]
+  jobs Job[]
 }
 
 model Job {
-  id         Int        @id @default(autoincrement())
+  id         String    @id @default(cuid())
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   createdBy User? @relation(fields: [jobOwnerEmail], references: [email])
@@ -82,11 +83,14 @@ model Job {
   salaryMax Int
   jobDescription String
   remarks String? 
+  team Team @relation(fields: [teamId], references: [id])
+  teamId String
+
 }
 //add contract type, status, priority
 
 model Client {
-  id    Int    @id @default(autoincrement()) 
+  id    String    @id @default(cuid())
   name  String @unique
   jobs Job[]
 }

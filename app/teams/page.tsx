@@ -51,8 +51,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Link from "next/link";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
+import Link from "next/link";
 import prisma from "@/prisma/db";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
@@ -106,7 +107,7 @@ export default async function Page() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <div className="grid grid-cols-3 gap-4 py-4">
+        <div className="grid grid-cols-7 gap-4 py-4">
           {jobs.map((job) => {
             const id = job.id;
 

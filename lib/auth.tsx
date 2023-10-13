@@ -50,16 +50,71 @@ export const authConfig: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    session: async ({ session, user }) => {
-      if (session?.user) {
-        session.user.id = user.id;
+    session: async ({ session, token }) => {
+      console.log("sess", { token, session });
+      if (token) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.teams = token.teams;
       }
+
       return session;
     },
+    async jwt({ token, user }) {
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          email: token.email,
+        },
+        include: {
+          teams: true,
+        },
+      });
+      if (!dbUser) {
+        token.id = user!.id;
+        return token;
+      }
+      console.log("jwt", { token, user });
+      console.log("test", dbUser.teams);
+
+      return {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        teams: dbUser.teams,
+      };
+    },
+    // async redirect(params: { url: string }) {
+    //   const { url } = params;
+
+    //   // url is just a path, e.g.: /videos/pets
+    //   if (!url.startsWith("http")) {
+    //     console.log("not http ", url);
+    //     return url;
+    //   }
+
+    //   // If we have a callback use only its relative path
+    //   const callbackUrl = new URL(url).searchParams.get("callbackUrl");
+    //   if (!callbackUrl) {
+    //     console.log("not callback ", url);
+
+    //     return url;
+    //   }
+    //   console.log("callback", new URL(callbackUrl as string).pathname);
+
+    //   return new URL(callbackUrl as string).pathname;
+    // },
+    // async jwt({token, user}) {
+
+    // }
   },
-  pages: {
-    signIn: "/login",
+  session: {
+    strategy: "jwt",
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  // pages: {
+  //   signIn: "/login",
+  // },
 };
 
 export async function loginRequiredServer() {
