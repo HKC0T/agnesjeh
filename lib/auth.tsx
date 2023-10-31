@@ -51,7 +51,7 @@ export const authConfig: NextAuthOptions = {
   ],
   callbacks: {
     session: async ({ session, token }) => {
-      console.log("sess", { token, session });
+      // console.log("sess", { token, session });
       if (token) {
         session.user.id = token.id;
         session.user.name = token.name;
@@ -74,8 +74,8 @@ export const authConfig: NextAuthOptions = {
         token.id = user!.id;
         return token;
       }
-      console.log("jwt", { token, user });
-      console.log("test", dbUser.teams);
+      // console.log("jwt", { token, user });
+      // console.log("test", dbUser.teams);
 
       return {
         id: dbUser.id,

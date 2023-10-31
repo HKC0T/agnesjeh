@@ -6,13 +6,16 @@ import { getServerSession } from "next-auth";
 const wait = (ms: number) => new Promise((rs) => setTimeout(rs, ms));
 
 export default async function Home() {
-  // const session = await loginRequiredServer();
-  // await wait(1000);
-  // console.log(`session: ${session}`);
+  const session = await loginRequiredServer();
+  await wait(1000);
+  console.log(`session: ${session}`);
   return (
     <main className="px-6 max-w-7xl lg:px-8 mx-auto">
-      {/* <h1>{session?.user?.id}</h1>
-      <h1>{session?.user?.name}</h1> */}
+      <h1>{session?.user?.id}</h1>
+      <h1>{session?.user?.name}</h1>
+      {(session?.user?.teams).map((team) => {
+        return <h1 key={team.id}>{team.name}</h1>;
+      })}
       <div>Dashboard</div>
     </main>
   );

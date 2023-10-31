@@ -67,6 +67,8 @@ model Team {
   name   String   @unique
   users User[]
   jobs Job[]
+  clients Client[]
+  //add client 
 }
 
 model Job {
@@ -93,8 +95,10 @@ model Client {
   id    String    @id @default(cuid())
   name  String @unique
   jobs Job[]
+  teams Team[]
 }
 //change it to 1-n
+//add teams
 
 enum Role {
   USER
