@@ -10,9 +10,10 @@ export default async function Home() {
   await wait(1000);
   console.log(`session: ${session}`);
   return (
-    <main className="px-6 max-w-7xl lg:px-8 mx-auto">
+    <main className="px-6 max-w-7xl lg:px-8 mx-auto h-[calc(100vh-62px)]">
       <h1>{session?.user?.id}</h1>
       <h1>{session?.user?.name}</h1>
+      <h1>{session?.user?.email}</h1>
       {(session?.user?.teams).map((team) => {
         return <h1 key={team.id}>{team.name}</h1>;
       })}

@@ -69,7 +69,7 @@ export default async function Page() {
   // console.log(teams);
 
   return (
-    <main className="px-6 max-w-7xl lg:px-8 mx-auto">
+    <main className="px-6 max-w-7xl lg:px-8 mx-auto h-[calc(100vh-62px)]">
       <TeamHeader teams={teams} jobs={jobs}></TeamHeader>
       {/* <div className="flex justify-between content-center py-4">
         <DropdownMenu>

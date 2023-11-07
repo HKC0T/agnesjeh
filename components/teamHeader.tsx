@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, Target } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  Landmark,
+  Languages,
+  Target,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
@@ -17,10 +23,18 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import DeleteButton from "@/components/deleteButton";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -76,6 +90,7 @@ import { SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { NewMemberDialog } from "./newMemberDialog";
 
 interface TeamHeaderProps {
   teams: Team[];
@@ -86,7 +101,7 @@ const formSchema = z.object({
   role: z.string().min(2, {
     message: "Role must be at least 2 characters.",
   }),
-  client: z.string().nonempty(),
+  client: z.string(),
   location: z
     .string()
     .min(2, { message: "Location must be at least 2 characters." }),
@@ -104,6 +119,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
   const [open, setOpen] = React.useState(false);
   const [selectedTeam, setSelectedTeam] = React.useState("");
   const [selected, setSelected] = React.useState<Job | null>(null);
+  const [member, setMember] = React.useState("");
   const { data: session, status: sessionStatus } = useSession({
     required: true,
   });
@@ -120,12 +136,16 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
       jobDescription: "",
     },
   });
+  //change query name check parallel query
   const { data: jobsQuery, status: queryStatus } = useQuery({
-    queryKey: ["jobs"],
+    queryKey: ["jobs", selectedTeam],
     queryFn: async () => {
-      const response = await axios.get("/api/jobs");
+      const response = await axios.get(`/api/jobs/${selectedTeam}`);
+      console.log("jobs req");
+
       return response.data;
     },
+    enabled: !!selectedTeam,
   });
   const {
     data: clientListQuery,
@@ -135,6 +155,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
     queryKey: ["clients", selectedTeam],
     queryFn: async () => {
       const response = await axios.get(`/api/clients/${selectedTeam}`);
+      console.log("client req");
       return response.data;
     },
     enabled: !!selectedTeam,
@@ -156,7 +177,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
   // console.log(selectedTeam);
 
   return (
-    <div className="flex flex-col h-full mx-auto">
+    <div className="grid  mx-auto  grid-rows-layout">
       <div className="flex py-4 ">
         <h1>
           {/* className="text-4xl font-bold" */}
@@ -178,7 +199,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
               <Command>
                 <CommandInput placeholder="Search team..." />
                 <CommandEmpty>No team found.</CommandEmpty>
-                <CommandGroup>
+                <CommandGroup heading="Teams">
                   {teams.map((team) => (
                     <CommandItem
                       key={team.id}
@@ -204,16 +225,59 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
             </PopoverContent>
           </Popover>
         </h1>
-        <div className="flex flex-1 justify-center">
+      </div>
+      <div className="flex flex-row pb-4">
+        <div className="flex flex-1 justify-start">
           <Tabs defaultValue="jobs" className="w-[400px]">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-flow-col">
               {/* <TabsTrigger value="overview">Overview</TabsTrigger> */}
-              <TabsTrigger value="jobs">Jobs</TabsTrigger>
-              <TabsTrigger value="clients">Clients</TabsTrigger>
+              <TabsTrigger className="col-auto" value="jobs">
+                Jobs
+              </TabsTrigger>
+              <TabsTrigger className="col-auto" value="clients">
+                Clients
+              </TabsTrigger>
+              <TabsTrigger className="col-auto" value="members">
+                Members
+              </TabsTrigger>
             </TabsList>
             {/* <TabsContent value="overview"></TabsContent> */}
             <TabsContent value="jobs"></TabsContent>
             <TabsContent value="clients"></TabsContent>
+            <TabsContent value="members">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Add new member</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      Add new member for{" "}
+                      {teams.find((team) => team.id === selectedTeam)?.name}
+                    </DialogTitle>
+                    <DialogDescription>
+                      Enter user email here. Click add when you're done.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        Email
+                      </Label>
+                      <Input
+                        id="name"
+                        value={member}
+                        onChange={(e) => setMember(e.target.value)}
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Add</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </TabsContent>
           </Tabs>
         </div>
         <Dialog>
@@ -231,7 +295,8 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
                 {teams.find((team) => team.id === selectedTeam)?.name}
               </DialogTitle>
               <DialogDescription>
-                Make changes to your profile here. Click save when you're done.
+                Add new job to your team here. Click "Add new job" when you're
+                done.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -262,54 +327,23 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Client</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  className={cn(
-                                    "w-[200px] justify-between",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value
-                                    ? clientListQuery.find(
-                                        (client) => client.id === field.id
-                                      )?.name
-                                    : "Select client"}
-                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[200px] p-0">
-                              <Command>
-                                <CommandInput placeholder="Search client..." />
-                                <CommandEmpty>No client found.</CommandEmpty>
-                                <CommandGroup>
-                                  {clientListQuery.map((client) => (
-                                    <CommandItem
-                                      value={client.id}
-                                      key={client.id}
-                                      onSelect={() => {
-                                        form.setValue("client", client.id);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          client.id === field.value
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        )}
-                                      />
-                                      {client.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select an existing client" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {clientListQuery.map((client) => (
+                                <SelectItem value={client.id} key={client.id}>
+                                  {client.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
 
                           <FormMessage />
                         </FormItem>
@@ -399,48 +433,56 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="grid grid-cols-7 gap-6 grid-flow-col">
-        <ScrollArea className="col-span-3 row-span-full">
-          <div className="grid grid-flow-row gap-6">
+      <div className="grid grid-cols-7 grid-rows-5 gap-6 grid-flow-col">
+        <div className="col-span-3 row-span-full ">
+          {/* scroll above */}
+          <div className="grid grid-flow-row gap-6 ">
             {queryStatus === "success" ? (
               jobsQuery.map((job: Job) => {
                 const id = job.id;
 
                 return (
                   <div
-                    className="cursor-pointer"
+                    className={cn(
+                      "cursor-pointer rounded-lg",
+                      selected && (selected.id === job.id ? "outline" : "")
+                    )}
                     onClick={() => setSelected(job)}
                     key={job.id}
                     accessKey={job.id}
+                    // tabIndex={1}
                   >
-                    <Card className="">
+                    <Card>
                       <CardHeader>
                         <div className="flex justify-between items-baseline">
                           <CardTitle className="text-xl">{job.role}</CardTitle>
-                          {/* {session?.user?.email === job.createdBy?.email ? (
-                      <>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="p-0 h-8 w-8">
-                              <DotsHorizontalIcon className="h-4 w-4 " />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            className="w-56"
-                            align="end"
-                            forceMount
-                          >
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem>
-                                <DeleteButton id={id} />
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </>
-                    ) : (
-                      <></>
-                    )} */}
+                          {session?.user?.email === job.createdBy?.email ? (
+                            <>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    className="p-0 h-8 w-8"
+                                  >
+                                    <DotsHorizontalIcon className="h-4 w-4 " />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  className="w-56"
+                                  align="end"
+                                  forceMount
+                                >
+                                  <DropdownMenuGroup>
+                                    <DropdownMenuItem>
+                                      <DeleteButton id={id} />
+                                    </DropdownMenuItem>
+                                  </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </>
+                          ) : (
+                            <></>
+                          )}
                         </div>
                         <CardDescription className="mt-0">
                           {job.clientName}
@@ -454,28 +496,6 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
                         <div className="font-semibold text-sm">
                           {job.createdBy?.name!}
                         </div>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline">Preview</Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                              <DialogTitle>{job.role}</DialogTitle>
-                              <DialogDescription>
-                                {job.clientName}
-                              </DialogDescription>
-                              <DialogDescription>
-                                Salary: £{job.salaryMin} - {job.salaryMax}
-                              </DialogDescription>
-                              <DialogDescription>
-                                Location: {job.location}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="whitespace-pre-line text-sm">
-                              {job.jobDescription}
-                            </div>
-                          </DialogContent>
-                        </Dialog>
                       </CardFooter>
                     </Card>
                   </div>
@@ -485,7 +505,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
               <div>loading</div>
             )}
           </div>
-        </ScrollArea>
+        </div>
         {selected ? (
           <Card className="col-span-4 row-span-full">
             <ScrollArea className="">
@@ -498,7 +518,16 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
                   £{selected?.salaryMin}-{selected?.salaryMax}
                 </CardDescription>
               </CardHeader>
-              {/* <CardContent className="">{sample}</CardContent> */}
+              <CardContent>
+                <div className="mb-4">
+                  <h1 className="font-bold text-xl">Job Description</h1>
+                  <div>{selected?.jobDescription}</div>
+                </div>
+                <div className="mb-4">
+                  <h1 className="font-bold text-xl">Remarks</h1>
+                  <div>{selected?.remarks}</div>
+                </div>
+              </CardContent>
               <CardFooter className="flex justify-between">
                 <Button variant="outline">Cancel</Button>
                 <Button>Deploy</Button>
@@ -507,7 +536,7 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
           </Card>
         ) : (
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-4 ">
-            {sample}
+            {selected}
           </div>
         )}
       </div>
@@ -516,124 +545,6 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
 };
 
 export default TeamHeader;
-const sample = `Creative Writing Generating random paragraphs can be an
-excellent way for writers to get their creative flow going at
-the beginning of the day. The writer has no idea what topic the
-random paragraph will be about when it appears. This forces the
-writer to use creativity to complete one of three common writing
-challenges. The writer can use the paragraph as the first one of
-a short story and build upon it. A second option is to use the
-random paragraph somewhere in a short story they create. The
-third option is to have the random paragraph be the ending
-paragraph in a short story. No matter which of these challenges
-is undertaken, the writer is forced to use creativity to
-incorporate the paragraph into their writing. Tackle Writers'
-Block A random paragraph can also be an excellent way for a
-writer to tackle writers' block. Writing block can often happen
-due to being stuck with a current project that the writer is
-trying to complete. By inserting a completely random paragraph
-from which to begin, it can take down some of the issues that
-may have been causing the writers' block in the first place.
-Beginning Writing Routine Another productive way to use this
-tool to begin a daily writing routine. One way is to generate a
-random paragraph with the intention to try to rewrite it while
-still keeping the original meaning. The purpose here is to just
-get the writing started so that when the writer goes onto their
-day's writing projects, words are already flowing from their
-fingers.Creative Writing Generating random paragraphs can be an
-excellent way for writers to get their creative flow going at
-the beginning of the day. The writer has no idea what topic the
-random paragraph will be about when it appears. This forces the
-writer to use creativity to complete one of three common writing
-challenges. The writer can use the paragraph as the first one of
-a short story and build upon it. A second option is to use the
-random paragraph somewhere in a short story they create. The
-third option is to have the random paragraph be the ending
-paragraph in a short story. No matter which of these challenges
-is undertaken, the writer is forced to use creativity to
-incorporate the paragraph into their writing. Tackle Writers'
-Block A random paragraph can also be an excellent way for a
-writer to tackle writers' block. Writing block can often happen
-due to being stuck with a current project that the writer is
-trying to complete. By inserting a completely random paragraph
-from which to begin, it can take down some of the issues that
-may have been causing the writers' block in the first place.
-Beginning Writing Routine Another productive way to use this
-tool to begin a daily writing routine. One way is to generate a
-random paragraph with the intention to try to rewrite it while
-still keeping the original meaning. The purpose here is to just
-get the writing started so that when the writer goes onto their
-day's writing projects, words are already flowing from their
-fingers.Creative Writing Generating random paragraphs can be an
-excellent way for writers to get their creative flow going at
-the beginning of the day. The writer has no idea what topic the
-random paragraph will be about when it appears. This forces the
-writer to use creativity to complete one of three common writing
-challenges. The writer can use the paragraph as the first one of
-a short story and build upon it. A second option is to use the
-random paragraph somewhere in a short story they create. The
-third option is to have the random paragraph be the ending
-paragraph in a short story. No matter which of these challenges
-is undertaken, the writer is forced to use creativity to
-incorporate the paragraph into their writing. Tackle Writers'
-Block A random paragraph can also be an excellent way for a
-writer to tackle writers' block. Writing block can often happen
-due to being stuck with a current project that the writer is
-trying to complete. By inserting a completely random paragraph
-from which to begin, it can take down some of the issues that
-may have been causing the writers' block in the first place.
-Beginning Writing Routine Another productive way to use this
-tool to begin a daily writing routine. One way is to generate a
-random paragraph with the intention to try to rewrite it while
-still keeping the original meaning. The purpose here is to just
-get the writing started so that when the writer goes onto their
-day's writing projects, words are already flowing from their
-fingers.Creative Writing Generating random paragraphs can be an
-excellent way for writers to get their creative flow going at
-the beginning of the day. The writer has no idea what topic the
-random paragraph will be about when it appears. This forces the
-writer to use creativity to complete one of three common writing
-challenges. The writer can use the paragraph as the first one of
-a short story and build upon it. A second option is to use the
-random paragraph somewhere in a short story they create. The
-third option is to have the random paragraph be the ending
-paragraph in a short story. No matter which of these challenges
-is undertaken, the writer is forced to use creativity to
-incorporate the paragraph into their writing. Tackle Writers'
-Block A random paragraph can also be an excellent way for a
-writer to tackle writers' block. Writing block can often happen
-due to being stuck with a current project that the writer is
-trying to complete. By inserting a completely random paragraph
-from which to begin, it can take down some of the issues that
-may have been causing the writers' block in the first place.
-Beginning Writing Routine Another productive way to use this
-tool to begin a daily writing routine. One way is to generate a
-random paragraph with the intention to try to rewrite it while
-still keeping the original meaning. The purpose here is to just
-get the writing started so that when the writer goes onto their
-day's writing projects, words are already flowing from their
-fingers.Creative Writing Generating random paragraphs can be an
-excellent way for writers to get their creative flow going at
-the beginning of the day. The writer has no idea what topic the
-random paragraph will be about when it appears. This forces the
-writer to use creativity to complete one of three common writing
-challenges. The writer can use the paragraph as the first one of
-a short story and build upon it. A second option is to use the
-random paragraph somewhere in a short story they create. The
-third option is to have the random paragraph be the ending
-paragraph in a short story. No matter which of these challenges
-is undertaken, the writer is forced to use creativity to
-incorporate the paragraph into their writing. Tackle Writers'
-Block A random paragraph can also be an excellent way for a
-writer to tackle writers' block. Writing block can often happen
-due to being stuck with a current project that the writer is
-trying to complete. By inserting a completely random paragraph
-from which to begin, it can take down some of the issues that
-may have been causing the writers' block in the first place.
-Beginning Writing Routine Another productive way to use this
-tool to begin a daily writing routine. One way is to generate a
-random paragraph with the intention to try to rewrite it while
-still keeping the original meaning. `;
 
 {
   /* <form onSubmit={handleSubmit}>

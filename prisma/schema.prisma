@@ -47,11 +47,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   role    Role     @default(USER)
-  teams Team[]
+teams Team[]
   accounts      Account[]
   sessions      Session[]
-  jobs  Job[]
-}
+  jobs  Job[] 
+  }
 
 model VerificationToken {
   identifier String
@@ -68,7 +68,7 @@ model Team {
   users User[]
   jobs Job[]
   clients Client[]
-  //add client 
+  //add client
 }
 
 model Job {

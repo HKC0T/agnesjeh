@@ -8,14 +8,22 @@ export async function GET(
 ) {
   try {
     const teamId = params.teamId;
-    console.log(teamId);
+    // console.log(teamId);
+    // const test = await prisma.client.findMany({
+    //   where: { teams: { some: { id: String(teamId) } } },
+    //   include: { teams: true },
+    // });
     const clients = await prisma.client.findMany({
       where: { teams: { some: { id: String(teamId) } } },
-      include: { teams: true },
     });
+    // console.log(teamId);
+    // const clients = await prisma.client.findMany({
+    //   where: { teams: { some: { id: String(teamId) } } },
+    //   include: { teams: true },
+    // });
 
     // const {teamId} = req.body
-    console.log(clients);
+    // console.log(clients);
     // const clients = await prisma.client.findMany({
     //   include: { teams: { where: { id: teamId } } },
     // });
@@ -23,7 +31,9 @@ export async function GET(
     return NextResponse.json(clients, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { message: "This team has no clients" },
+      {
+        message: "This team has no clients",
+      },
       { status: 500 }
     );
   }

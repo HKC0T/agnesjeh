@@ -33,6 +33,8 @@
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
+
+    --navheight: 60px;
   }
 
   .dark {
@@ -71,6 +73,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground h-screen overflow-scroll;
+    @apply bg-background text-foreground overflow-auto;
   }
 }
