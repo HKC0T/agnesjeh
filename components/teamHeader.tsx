@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+
 import {
   Check,
   ChevronsUpDown,
@@ -115,7 +116,7 @@ const formSchema = z.object({
   remarks: z.string().optional(),
 });
 
-const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
+const TeamHeader: React.FC<TeamHeaderProps> = ({ teamstest, jobs }) => {
   const [open, setOpen] = React.useState(false);
   const [selectedTeam, setSelectedTeam] = React.useState("");
   const [selected, setSelected] = React.useState<Job | null>(null);
@@ -137,6 +138,16 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
     },
   });
   //change query name check parallel query
+  const { data: teams, status: teamQueryStatus } = useQuery({
+    queryKey: ["teams", session?.user.id],
+    queryFn: async () => {
+      const response = await axios.get(`/api/teams/${session?.user.id}`);
+      console.log("teams req");
+
+      return response.data;
+    },
+    enabled: sessionStatus === "authenticated",
+  });
   const { data: jobsQuery, status: queryStatus } = useQuery({
     queryKey: ["jobs", selectedTeam],
     queryFn: async () => {
@@ -170,377 +181,411 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teams, jobs }) => {
       });
     },
   });
+  const { mutate: addMember } = useMutation({
+    mutationFn: () => {
+      return axios.post("/api/invites", {
+        inviteeEmail: member,
+        teamId: selectedTeam,
+      });
+    },
+  });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     addNewJob(values);
   }
+
+  function onMemberSubmit(event: React.FormEvent<HTMLInputElement>) {
+    event.preventDefault();
+    console.log(member);
+    addMember();
+  }
   // console.log(selectedTeam);
 
   return (
-    <div className="grid  mx-auto  grid-rows-layout">
-      <div className="flex py-4 ">
-        <h1>
-          {/* className="text-4xl font-bold" */}
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-[200px] justify-between"
-              >
-                {selectedTeam
-                  ? teams.find((team) => team.id === selectedTeam)?.name
-                  : "Select team..."}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <Command>
-                <CommandInput placeholder="Search team..." />
-                <CommandEmpty>No team found.</CommandEmpty>
-                <CommandGroup heading="Teams">
-                  {teams.map((team) => (
-                    <CommandItem
-                      key={team.id}
-                      onSelect={(currentValue) => {
-                        setSelectedTeam(
-                          currentValue === selectedTeam ? "" : currentValue
-                        );
-                        setOpen(false);
-                      }}
-                      value={team.id}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedTeam === team.id ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {team.name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </h1>
-      </div>
-      <div className="flex flex-row pb-4">
-        <div className="flex flex-1 justify-start">
-          <Tabs defaultValue="jobs" className="w-[400px]">
-            <TabsList className="grid w-full grid-flow-col">
-              {/* <TabsTrigger value="overview">Overview</TabsTrigger> */}
-              <TabsTrigger className="col-auto" value="jobs">
-                Jobs
-              </TabsTrigger>
-              <TabsTrigger className="col-auto" value="clients">
-                Clients
-              </TabsTrigger>
-              <TabsTrigger className="col-auto" value="members">
-                Members
-              </TabsTrigger>
-            </TabsList>
-            {/* <TabsContent value="overview"></TabsContent> */}
-            <TabsContent value="jobs"></TabsContent>
-            <TabsContent value="clients"></TabsContent>
-            <TabsContent value="members">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">Add new member</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>
-                      Add new member for{" "}
-                      {teams.find((team) => team.id === selectedTeam)?.name}
-                    </DialogTitle>
-                    <DialogDescription>
-                      Enter user email here. Click add when you're done.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right">
-                        Email
-                      </Label>
-                      <Input
-                        id="name"
-                        value={member}
-                        onChange={(e) => setMember(e.target.value)}
-                        className="col-span-3"
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit">Add</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </TabsContent>
-          </Tabs>
-        </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            {teams.find((team) => team.id === selectedTeam) ? (
-              <Button variant="outline">New job</Button>
-            ) : (
-              <></>
-            )}
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[800px] ">
-            <DialogHeader>
-              <DialogTitle>
-                New job for{" "}
-                {teams.find((team) => team.id === selectedTeam)?.name}
-              </DialogTitle>
-              <DialogDescription>
-                Add new job to your team here. Click "Add new job" when you're
-                done.
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8"
-              >
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 items-center gap-8">
-                    <FormField
-                      control={form.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem className="col-span-2">
-                          <FormLabel>Role</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="client"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Client</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select an existing client" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {clientListQuery.map((client) => (
-                                <SelectItem value={client.id} key={client.id}>
-                                  {client.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="salaryMin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Minimun Salary</FormLabel>
-                          <FormControl>
-                            <Input type="number" {...field} />
-                          </FormControl>
-
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="salaryMax"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Maximun Salary</FormLabel>
-                          <FormControl>
-                            <Input type="number" {...field} />
-                          </FormControl>
-
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="col-span-2">
-                      <FormField
-                        control={form.control}
-                        name="jobDescription"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Job Description</FormLabel>
-                            <FormControl>
-                              <Textarea className="max-h-52" {...field} />
-                            </FormControl>
-
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <FormField
-                        control={form.control}
-                        name="remarks"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Remarks</FormLabel>
-                            <FormControl>
-                              <Textarea className="max-h-52" {...field} />
-                            </FormControl>
-
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Add new job</Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="grid grid-cols-7 grid-rows-5 gap-6 grid-flow-col">
-        <div className="col-span-3 row-span-full ">
-          {/* scroll above */}
-          <div className="grid grid-flow-row gap-6 ">
-            {queryStatus === "success" ? (
-              jobsQuery.map((job: Job) => {
-                const id = job.id;
-
-                return (
-                  <div
-                    className={cn(
-                      "cursor-pointer rounded-lg",
-                      selected && (selected.id === job.id ? "outline" : "")
-                    )}
-                    onClick={() => setSelected(job)}
-                    key={job.id}
-                    accessKey={job.id}
-                    // tabIndex={1}
+    <>
+      {teams && (
+        <div className="grid  mx-auto  grid-rows-layout py-4">
+          <div className="flex pb-4 ">
+            <h1>
+              {/* className="text-4xl font-bold" */}
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-[200px] justify-between"
                   >
-                    <Card>
-                      <CardHeader>
-                        <div className="flex justify-between items-baseline">
-                          <CardTitle className="text-xl">{job.role}</CardTitle>
-                          {session?.user?.email === job.createdBy?.email ? (
-                            <>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    className="p-0 h-8 w-8"
-                                  >
-                                    <DotsHorizontalIcon className="h-4 w-4 " />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  className="w-56"
-                                  align="end"
-                                  forceMount
-                                >
-                                  <DropdownMenuGroup>
-                                    <DropdownMenuItem>
-                                      <DeleteButton id={id} />
-                                    </DropdownMenuItem>
-                                  </DropdownMenuGroup>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </>
-                          ) : (
-                            <></>
+                    {selectedTeam
+                      ? teams.find((team: Team) => team.id === selectedTeam)
+                          ?.name
+                      : "Select team..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search team..." />
+                    <CommandEmpty>No team found.</CommandEmpty>
+                    <CommandGroup heading="Teams">
+                      {teams.map((team: Team) => (
+                        <CommandItem
+                          key={team.id}
+                          onSelect={(currentValue) => {
+                            setSelectedTeam(
+                              currentValue === selectedTeam ? "" : currentValue
+                            );
+                            setOpen(false);
+                          }}
+                          value={team.id}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedTeam === team.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {team.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </h1>
+          </div>
+          <div className="flex flex-row pb-4">
+            <div className="flex flex-1 justify-start">
+              <Tabs defaultValue="jobs" className="w-[400px]">
+                <TabsList className="grid w-full grid-flow-col">
+                  {/* <TabsTrigger value="overview">Overview</TabsTrigger> */}
+                  <TabsTrigger className="col-auto" value="jobs">
+                    Jobs
+                  </TabsTrigger>
+                  <TabsTrigger className="col-auto" value="clients">
+                    Clients
+                  </TabsTrigger>
+                  <TabsTrigger className="col-auto" value="members">
+                    Members
+                  </TabsTrigger>
+                </TabsList>
+                {/* <TabsContent value="overview"></TabsContent> */}
+                <TabsContent value="jobs"></TabsContent>
+                <TabsContent value="clients"></TabsContent>
+                <TabsContent value="members">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">Add new member</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>
+                          Add new member for{" "}
+                          {
+                            teams.find((team: Team) => team.id === selectedTeam)
+                              ?.name
+                          }
+                        </DialogTitle>
+                        <DialogDescription>
+                          Enter user email here. Click add when you're done.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form
+                        className="grid gap-4 py-4"
+                        onSubmit={onMemberSubmit}
+                      >
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="name" className="text-right">
+                            Email
+                          </Label>
+                          <Input
+                            id="name"
+                            value={member}
+                            onChange={(e) => setMember(e.target.value)}
+                            className="col-span-3"
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit">Add</Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </TabsContent>
+              </Tabs>
+            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                {teams.find((team: Team) => team.id === selectedTeam) ? (
+                  <Button variant="outline">New job</Button>
+                ) : (
+                  <></>
+                )}
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[800px] ">
+                <DialogHeader>
+                  <DialogTitle>
+                    New job for{" "}
+                    {teams.find((team: Team) => team.id === selectedTeam)?.name}
+                  </DialogTitle>
+                  <DialogDescription>
+                    Add new job to your team here. Click "Add new job" when
+                    you're done.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-8"
+                  >
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 items-center gap-8">
+                        <FormField
+                          control={form.control}
+                          name="role"
+                          render={({ field }) => (
+                            <FormItem className="col-span-2">
+                              <FormLabel>Role</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+
+                              <FormMessage />
+                            </FormItem>
                           )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="client"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Client</FormLabel>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select an existing client" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {clientListQuery.map((client) => (
+                                    <SelectItem
+                                      value={client.id}
+                                      key={client.id}
+                                    >
+                                      {client.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="location"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Location</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="salaryMin"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Minimun Salary</FormLabel>
+                              <FormControl>
+                                <Input type="number" {...field} />
+                              </FormControl>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="salaryMax"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Maximun Salary</FormLabel>
+                              <FormControl>
+                                <Input type="number" {...field} />
+                              </FormControl>
+
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="col-span-2">
+                          <FormField
+                            control={form.control}
+                            name="jobDescription"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Job Description</FormLabel>
+                                <FormControl>
+                                  <Textarea className="max-h-52" {...field} />
+                                </FormControl>
+
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                        <CardDescription className="mt-0">
-                          {job.clientName}
-                        </CardDescription>
-                        <div className="gap-1 flex">
-                          <Badge className="text-xs">£{job.salaryMax}</Badge>
-                          <Badge className="text-xs">{job.location}</Badge>
+                        <div className="col-span-2">
+                          <FormField
+                            control={form.control}
+                            name="remarks"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Remarks</FormLabel>
+                                <FormControl>
+                                  <Textarea className="max-h-52" {...field} />
+                                </FormControl>
+
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                      </CardHeader>
-                      <CardFooter className="justify-between">
-                        <div className="font-semibold text-sm">
-                          {job.createdBy?.name!}
-                        </div>
-                      </CardFooter>
-                    </Card>
-                  </div>
-                );
-              })
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit">Add new job</Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="grid grid-cols-7 grid-rows-5 gap-6 grid-flow-col">
+            <div className="col-span-3 row-span-full ">
+              {/* scroll above */}
+              <div className="grid grid-flow-row gap-6 ">
+                {queryStatus === "success" ? (
+                  jobsQuery.map((job: Job) => {
+                    const id = job.id;
+
+                    return (
+                      <div
+                        className={cn(
+                          "cursor-pointer rounded-lg",
+                          selected && (selected.id === job.id ? "outline" : "")
+                        )}
+                        onClick={() => setSelected(job)}
+                        key={job.id}
+                        accessKey={job.id}
+                        // tabIndex={1}
+                      >
+                        <Card>
+                          <CardHeader>
+                            <div className="flex justify-between items-baseline">
+                              <CardTitle className="text-xl">
+                                {job.role}
+                              </CardTitle>
+                              {session?.user?.email === job.createdBy?.email ? (
+                                <>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        className="p-0 h-8 w-8"
+                                      >
+                                        <DotsHorizontalIcon className="h-4 w-4 " />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      className="w-56"
+                                      align="end"
+                                      forceMount
+                                    >
+                                      <DropdownMenuGroup>
+                                        <DropdownMenuItem>
+                                          <DeleteButton id={id} />
+                                        </DropdownMenuItem>
+                                      </DropdownMenuGroup>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </>
+                              ) : (
+                                <></>
+                              )}
+                            </div>
+                            <CardDescription className="mt-0">
+                              {job.clientName}
+                            </CardDescription>
+                            <div className="gap-1 flex">
+                              <Badge className="text-xs">
+                                £{job.salaryMax}
+                              </Badge>
+                              <Badge className="text-xs">{job.location}</Badge>
+                            </div>
+                          </CardHeader>
+                          <CardFooter className="justify-between">
+                            <div className="font-semibold text-sm">
+                              {job.createdBy?.name!}
+                            </div>
+                          </CardFooter>
+                        </Card>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div>loading</div>
+                )}
+              </div>
+            </div>
+            {selected ? (
+              <Card className="col-span-4 row-span-full">
+                <ScrollArea className="">
+                  <CardHeader>
+                    <CardTitle>{selected?.role}</CardTitle>
+                    <CardDescription>
+                      {selected?.clientName}, {selected?.location}
+                    </CardDescription>
+                    <CardDescription>
+                      £{selected?.salaryMin}-{selected?.salaryMax}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <h1 className="font-bold text-xl">Job Description</h1>
+                      <div>{selected?.jobDescription}</div>
+                    </div>
+                    <div className="mb-4">
+                      <h1 className="font-bold text-xl">Remarks</h1>
+                      <div>{selected?.remarks}</div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline">Cancel</Button>
+                    <Button>Deploy</Button>
+                  </CardFooter>
+                </ScrollArea>
+              </Card>
             ) : (
-              <div>loading</div>
+              <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-4 ">
+                {selected}
+              </div>
             )}
           </div>
         </div>
-        {selected ? (
-          <Card className="col-span-4 row-span-full">
-            <ScrollArea className="">
-              <CardHeader>
-                <CardTitle>{selected?.role}</CardTitle>
-                <CardDescription>
-                  {selected?.clientName}, {selected?.location}
-                </CardDescription>
-                <CardDescription>
-                  £{selected?.salaryMin}-{selected?.salaryMax}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                  <h1 className="font-bold text-xl">Job Description</h1>
-                  <div>{selected?.jobDescription}</div>
-                </div>
-                <div className="mb-4">
-                  <h1 className="font-bold text-xl">Remarks</h1>
-                  <div>{selected?.remarks}</div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline">Cancel</Button>
-                <Button>Deploy</Button>
-              </CardFooter>
-            </ScrollArea>
-          </Card>
-        ) : (
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-4 ">
-            {selected}
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 

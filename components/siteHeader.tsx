@@ -1,7 +1,16 @@
 "use client";
 
 import { signOut, useSession } from "next-auth/react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { InvitesMenu } from "./invitesMenu";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
@@ -17,6 +26,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-x-2 text-xs font-medium">
           {session ? (
             <>
+              <InvitesMenu />
               <Link href="/teams" className="headerButton">
                 Teams
               </Link>
@@ -49,8 +59,8 @@ function LogOut() {
   return (
     <button
       className="headerButton"
-      onClick={() =>
-        signOut()
+      onClick={
+        () => signOut()
         //{ callbackUrl: "/login" }
       }
     >

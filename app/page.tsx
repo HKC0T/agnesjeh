@@ -1,14 +1,24 @@
 import { authConfig, loginRequiredServer } from "@/lib/auth";
 
 import prisma from "@/prisma/db";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { getServerSession } from "next-auth";
 
 const wait = (ms: number) => new Promise((rs) => setTimeout(rs, ms));
 
 export default async function Home() {
   const session = await loginRequiredServer();
+  const userEmail = session?.user?.email;
+  const invites = await prisma.invites.findMany({
+    where: { inviteeEmail: userEmail },
+  });
+  console.log("inv req");
+  // function joinTeam(inviteId: string) {}
+
   await wait(1000);
-  console.log(`session: ${session}`);
+
+  // console.log(`session: ${session}`);
   return (
     <main className="px-6 max-w-7xl lg:px-8 mx-auto h-[calc(100vh-62px)]">
       <h1>{session?.user?.id}</h1>
@@ -17,6 +27,14 @@ export default async function Home() {
       {(session?.user?.teams).map((team) => {
         return <h1 key={team.id}>{team.name}</h1>;
       })}
+      {invites.map((invite) => {
+        return (
+          <div key={invite.id} className="flex flex-row justify-between">
+            <h1>{invite.teamId}</h1> <button>join</button>
+          </div>
+        );
+      })}
+
       <div>Dashboard</div>
     </main>
   );

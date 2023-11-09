@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,21 +8,20 @@ datasource db {
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
   refresh_token_expires_in Int?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -41,17 +37,18 @@ model Session {
 model User {
   id            String    @id @default(cuid())
   name          String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  role    Role     @default(USER)
-teams Team[]
   accounts      Account[]
+  jobs          Job[]
   sessions      Session[]
-  jobs  Job[] 
-  }
+  teams         Team[]    @relation("TeamToUser")
+  invites       Invites[]
+}
 
 model VerificationToken {
   identifier String
@@ -61,47 +58,51 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-
 model Team {
-  id      String    @id @default(cuid())
-  name   String   @unique
-  users User[]
-  jobs Job[]
-  clients Client[]
-  //add client
+  id          String    @id @default(cuid())
+  name        String    @unique
+  jobs        Job[]
+  clients     Client[]  @relation("ClientToTeam")
+  users       User[]    @relation("TeamToUser")
+  invitesSent Invites[]
+}
+
+model Invites {
+  id           String @id @default(cuid())
+  from         Team   @relation(fields: [teamId], references: [id])
+  teamId       String
+  to           User   @relation(fields: [inviteeEmail], references: [email])
+  inviteeEmail String
+
+  @@unique([teamId, inviteeEmail])
 }
 
 model Job {
-  id         String    @id @default(cuid())
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  createdBy User? @relation(fields: [jobOwnerEmail], references: [email])
-  jobOwnerEmail String?
-  role      String
-  client Client @relation(fields: [clientName], references: [name])
-  clientName String 
-  location String?
-  salaryMin Int 
-  salaryMax Int
+  id             String   @id @default(cuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  role           String
+  clientName     String
+  location       String?
+  salaryMin      Int
+  salaryMax      Int
   jobDescription String
-  remarks String? 
-  team Team @relation(fields: [teamId], references: [id])
-  teamId String
-
+  remarks        String?
+  jobOwnerEmail  String?
+  teamId         String
+  client         Client   @relation(fields: [clientName], references: [name])
+  createdBy      User?    @relation(fields: [jobOwnerEmail], references: [email])
+  team           Team     @relation(fields: [teamId], references: [id])
 }
-//add contract type, status, priority
 
 model Client {
-  id    String    @id @default(cuid())
+  id    String @id @default(cuid())
   name  String @unique
-  jobs Job[]
-  teams Team[]
+  jobs  Job[]
+  teams Team[] @relation("ClientToTeam")
 }
-//change it to 1-n
-//add teams
 
 enum Role {
   USER
   ADMIN
 }
-
