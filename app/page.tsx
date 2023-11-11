@@ -1,3 +1,4 @@
+import TeamHeader from "@/components/teamHeader";
 import { authConfig, loginRequiredServer } from "@/lib/auth";
 
 import prisma from "@/prisma/db";
@@ -10,9 +11,9 @@ const wait = (ms: number) => new Promise((rs) => setTimeout(rs, ms));
 export default async function Home() {
   const session = await loginRequiredServer();
   const userEmail = session?.user?.email;
-  const invites = await prisma.invites.findMany({
-    where: { inviteeEmail: userEmail },
-  });
+  // const invites = await prisma.invites.findMany({
+  //   where: { inviteeEmail: userEmail },
+  // });
   console.log("inv req");
   // function joinTeam(inviteId: string) {}
 
@@ -20,8 +21,14 @@ export default async function Home() {
 
   // console.log(`session: ${session}`);
   return (
-    <main className="px-6 max-w-7xl lg:px-8 mx-auto h-[calc(100vh-62px)]">
-      <h1>{session?.user?.id}</h1>
+    <main className="px-6 py-4 max-w-7xl lg:px-8 mx-auto max-h-[calc(100vh-62px)] min-h-[calc(100vh-62px)] flex flex-col ">
+      <TeamHeader />
+    </main>
+  );
+}
+
+{
+  /* <h1>{session?.user?.id}</h1>
       <h1>{session?.user?.name}</h1>
       <h1>{session?.user?.email}</h1>
       {(session?.user?.teams).map((team) => {
@@ -35,9 +42,7 @@ export default async function Home() {
         );
       })}
 
-      <div>Dashboard</div>
-    </main>
-  );
+      <div>Dashboard</div> */
 }
 
 // <div
@@ -107,3 +112,6 @@ export default async function Home() {
         </div>
       </div> */
 }
+
+//things neeed to be done:
+//react query everything, auth, can

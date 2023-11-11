@@ -48,6 +48,7 @@ model User {
   sessions      Session[]
   teams         Team[]    @relation("TeamToUser")
   invites       Invites[]
+  adminOf       Team[]    @relation("TeamAdmin")
 }
 
 model VerificationToken {
@@ -65,6 +66,7 @@ model Team {
   clients     Client[]  @relation("ClientToTeam")
   users       User[]    @relation("TeamToUser")
   invitesSent Invites[]
+  admin       User[]    @relation("TeamAdmin")
 }
 
 model Invites {
@@ -78,9 +80,9 @@ model Invites {
 }
 
 model Job {
-  id             String   @id @default(cuid())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id             String      @id @default(cuid())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
   role           String
   clientName     String
   location       String?
@@ -90,9 +92,12 @@ model Job {
   remarks        String?
   jobOwnerEmail  String?
   teamId         String
-  client         Client   @relation(fields: [clientName], references: [name])
-  createdBy      User?    @relation(fields: [jobOwnerEmail], references: [email])
-  team           Team     @relation(fields: [teamId], references: [id])
+  client         Client      @relation(fields: [clientName], references: [name])
+  createdBy      User?       @relation(fields: [jobOwnerEmail], references: [email])
+  team           Team        @relation(fields: [teamId], references: [id])
+  status         JobStatus   @default(URGENT)
+  active         Active      @default(ACTIVE)
+  // interviews     Interview[]
 }
 
 model Client {
@@ -102,7 +107,36 @@ model Client {
   teams Team[] @relation("ClientToTeam")
 }
 
+// model Candidate {
+//   id          String      @id @default(cuid())
+//   name        String
+//   ProfileLink String?
+//   interviews  Interview[]
+// }
+
+// model Interview {
+//   id          String    @id @default(cuid())
+//   job         Job       @relation(fields: [jobId], references: [id])
+//   jobId       String
+//   candidate   Candidate @relation(fields: [candidateId], references: [id])
+//   candidateId String
+//   dateTime    DateTime
+//   stage       Int
+
+//   @@unique([jobId, candidateId, dateTime])
+// }
+
 enum Role {
   USER
   ADMIN
+}
+
+enum JobStatus {
+  URGENT
+  NORMAL
+}
+
+enum Active {
+  ACTIVE
+  CLOSED
 }

@@ -58,7 +58,7 @@ import Link from "next/link";
 import prisma from "@/prisma/db";
 import { getServerSession } from "next-auth";
 import { authConfig } from "@/lib/auth";
-import TeamHeader from "@/components/teamHeader";
+// import TeamHeader from "@/components/TeamHeader.1";
 import { Prisma } from "@prisma/client";
 
 export default async function Page() {
@@ -70,7 +70,7 @@ export default async function Page() {
 
   return (
     <main className="px-6 max-w-7xl lg:px-8 mx-auto h-[calc(100vh-62px)]">
-      <TeamHeader teams={teams} jobs={jobs}></TeamHeader>
+      {/* <TeamHeader></TeamHeader> */}
       {/* <div className="flex justify-between content-center py-4">
         <DropdownMenu>
             <DropdownMenuTrigger asChild>

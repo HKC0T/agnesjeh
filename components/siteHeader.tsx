@@ -27,9 +27,7 @@ export function SiteHeader() {
           {session ? (
             <>
               <InvitesMenu />
-              <Link href="/teams" className="headerButton">
-                Teams
-              </Link>
+
               <Link href="/jobs" className="headerButton">
                 Jobs
               </Link>

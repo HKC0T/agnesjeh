@@ -71,7 +71,7 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       gridTemplateRows: {
-        layout: "auto auto 1fr",
+        layout: "auto 1fr",
       },
     },
   },

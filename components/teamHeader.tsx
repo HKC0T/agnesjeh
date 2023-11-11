@@ -54,18 +54,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+
 import {
   Form,
   FormControl,
@@ -92,32 +81,28 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { NewMemberDialog } from "./newMemberDialog";
+import SelectTeam from "./selectTeam";
+import NewJobForm from "./newJobForm";
 
-interface TeamHeaderProps {
-  teams: Team[];
-  jobs: Job[];
-}
+// const formSchema = z.object({
+//   role: z.string().min(2, {
+//     message: "Role must be at least 2 characters.",
+//   }),
+//   client: z.string(),
+//   location: z
+//     .string()
+//     .min(2, { message: "Location must be at least 2 characters." }),
+//   salaryMin: z.coerce
+//     .number({ invalid_type_error: "Salary must be a number." })
+//     .positive({ message: "Salary must be greater than 0" }),
+//   salaryMax: z.coerce
+//     .number({ invalid_type_error: "Salary must be a number." })
+//     .positive(),
+//   jobDescription: z.string().nonempty(),
+//   remarks: z.string().optional(),
+// });
 
-const formSchema = z.object({
-  role: z.string().min(2, {
-    message: "Role must be at least 2 characters.",
-  }),
-  client: z.string(),
-  location: z
-    .string()
-    .min(2, { message: "Location must be at least 2 characters." }),
-  salaryMin: z.coerce
-    .number({ invalid_type_error: "Salary must be a number." })
-    .positive({ message: "Salary must be greater than 0" }),
-  salaryMax: z.coerce
-    .number({ invalid_type_error: "Salary must be a number." })
-    .positive(),
-  jobDescription: z.string().nonempty(),
-  remarks: z.string().optional(),
-});
-
-const TeamHeader: React.FC<TeamHeaderProps> = ({ teamstest, jobs }) => {
-  const [open, setOpen] = React.useState(false);
+export function TeamHeader() {
   const [selectedTeam, setSelectedTeam] = React.useState("");
   const [selected, setSelected] = React.useState<Job | null>(null);
   const [member, setMember] = React.useState("");
@@ -128,15 +113,15 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamstest, jobs }) => {
   //   console.log(e.currentTarget.accessKey);
   //   setSelected("");
   // }
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      role: "",
-      location: "",
+  // const form = useForm<z.infer<typeof formSchema>>({
+  //   resolver: zodResolver(formSchema),
+  //   defaultValues: {
+  //     role: "",
+  //     location: "",
 
-      jobDescription: "",
-    },
-  });
+  //     jobDescription: "",
+  //   },
+  // });
   //change query name check parallel query
   const { data: teams, status: teamQueryStatus } = useQuery({
     queryKey: ["teams", session?.user.id],
@@ -158,29 +143,16 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamstest, jobs }) => {
     },
     enabled: !!selectedTeam,
   });
-  const {
-    data: clientListQuery,
-    status: clientListQueryStatusm,
-    isLoading,
-  } = useQuery({
-    queryKey: ["clients", selectedTeam],
-    queryFn: async () => {
-      const response = await axios.get(`/api/clients/${selectedTeam}`);
-      console.log("client req");
-      return response.data;
-    },
-    enabled: !!selectedTeam,
-  });
 
-  const { mutate: addNewJob } = useMutation({
-    mutationFn: (values: z.infer<typeof formSchema>) => {
-      return axios.post("/api/jobs", {
-        user: session?.user.email,
-        job: values,
-        team: selectedTeam,
-      });
-    },
-  });
+  // const { mutate: addNewJob } = useMutation({
+  //   mutationFn: (values: z.infer<typeof formSchema>) => {
+  //     return axios.post("/api/jobs", {
+  //       user: session?.user.email,
+  //       job: values,
+  //       team: selectedTeam,
+  //     });
+  //   },
+  // });
   const { mutate: addMember } = useMutation({
     mutationFn: () => {
       return axios.post("/api/invites", {
@@ -190,9 +162,9 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamstest, jobs }) => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    addNewJob(values);
-  }
+  // function onSubmit(values: z.infer<typeof formSchema>) {
+  //   addNewJob(values);
+  // }
 
   function onMemberSubmit(event: React.FormEvent<HTMLInputElement>) {
     event.preventDefault();
@@ -204,76 +176,51 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamstest, jobs }) => {
   return (
     <>
       {teams && (
-        <div className="grid  mx-auto  grid-rows-layout py-4">
-          <div className="flex pb-4 ">
-            <h1>
-              {/* className="text-4xl font-bold" */}
-              <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-[200px] justify-between"
-                  >
-                    {selectedTeam
-                      ? teams.find((team: Team) => team.id === selectedTeam)
-                          ?.name
-                      : "Select team..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search team..." />
-                    <CommandEmpty>No team found.</CommandEmpty>
-                    <CommandGroup heading="Teams">
-                      {teams.map((team: Team) => (
-                        <CommandItem
-                          key={team.id}
-                          onSelect={(currentValue) => {
-                            setSelectedTeam(
-                              currentValue === selectedTeam ? "" : currentValue
-                            );
-                            setOpen(false);
-                          }}
-                          value={team.id}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedTeam === team.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                          {team.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </h1>
-          </div>
-          <div className="flex flex-row pb-4">
-            <div className="flex flex-1 justify-start">
-              <Tabs defaultValue="jobs" className="w-[400px]">
-                <TabsList className="grid w-full grid-flow-col">
-                  {/* <TabsTrigger value="overview">Overview</TabsTrigger> */}
-                  <TabsTrigger className="col-auto" value="jobs">
-                    Jobs
-                  </TabsTrigger>
-                  <TabsTrigger className="col-auto" value="clients">
-                    Clients
-                  </TabsTrigger>
-                  <TabsTrigger className="col-auto" value="members">
-                    Members
-                  </TabsTrigger>
+        <>
+          <SelectTeam
+            selectedTeam={selectedTeam}
+            teams={teams}
+            setSelectedTeam={setSelectedTeam}
+          />
+          <div className="flex flex-grow min-h-[calc(100%-40px)] min-w-full pt-4 ">
+            {/* <div className="flex"></div> */}
+            <Tabs defaultValue="jobs" className="flex flex-col min-w-full">
+              <div className="flex items-baseline justify-between">
+                <TabsList className="max-w-fit">
+                  <TabsTrigger value="jobs">Jobs</TabsTrigger>
+
+                  <TabsTrigger value="members">Members</TabsTrigger>
                 </TabsList>
-                {/* <TabsContent value="overview"></TabsContent> */}
-                <TabsContent value="jobs"></TabsContent>
-                <TabsContent value="clients"></TabsContent>
+                <TabsContent value="jobs">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      {teams.find((team: Team) => team.id === selectedTeam) ? (
+                        <Button variant="outline">New job</Button>
+                      ) : (
+                        <></>
+                      )}
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[800px] ">
+                      <DialogHeader>
+                        <DialogTitle>
+                          New job for{" "}
+                          {
+                            teams.find((team: Team) => team.id === selectedTeam)
+                              ?.name
+                          }
+                        </DialogTitle>
+                        <DialogDescription>
+                          Add new job to your team here. Click "Add new job"
+                          when you're done.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <NewJobForm
+                        selectedTeam={selectedTeam}
+                        session={session!}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </TabsContent>
                 <TabsContent value="members">
                   <Dialog>
                     <DialogTrigger asChild>
@@ -314,331 +261,555 @@ const TeamHeader: React.FC<TeamHeaderProps> = ({ teamstest, jobs }) => {
                     </DialogContent>
                   </Dialog>
                 </TabsContent>
-              </Tabs>
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                {teams.find((team: Team) => team.id === selectedTeam) ? (
-                  <Button variant="outline">New job</Button>
-                ) : (
-                  <></>
-                )}
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[800px] ">
-                <DialogHeader>
-                  <DialogTitle>
-                    New job for{" "}
-                    {teams.find((team: Team) => team.id === selectedTeam)?.name}
-                  </DialogTitle>
-                  <DialogDescription>
-                    Add new job to your team here. Click "Add new job" when
-                    you're done.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-8"
-                  >
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-2 items-center gap-8">
-                        <FormField
-                          control={form.control}
-                          name="role"
-                          render={({ field }) => (
-                            <FormItem className="col-span-2">
-                              <FormLabel>Role</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
+              </div>
 
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+              <TabsContent
+                value="jobs"
+                className="flex min-h-[calc(100%-40px)]  flex-grow-0 py-4"
+              >
+                <div className="grid grid-cols-3 grid-flow-col gap-4 min-w-full">
+                  <ScrollArea className="max-h-full p-2 rounded-lg border bg-card text-card-foreground shadow-sm col-span-1">
+                    <div className="grid grid-flow-row grid-cols-1 gap-2 p-2">
+                      {queryStatus === "success" ? (
+                        jobsQuery.map((job: Job) => {
+                          const id = job.id;
 
-                        <FormField
-                          control={form.control}
-                          name="client"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Client</FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select an existing client" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {clientListQuery.map((client) => (
-                                    <SelectItem
-                                      value={client.id}
-                                      key={client.id}
-                                    >
-                                      {client.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="location"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Location</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="salaryMin"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Minimun Salary</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} />
-                              </FormControl>
-
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="salaryMax"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Maximun Salary</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} />
-                              </FormControl>
-
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="col-span-2">
-                          <FormField
-                            control={form.control}
-                            name="jobDescription"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Job Description</FormLabel>
-                                <FormControl>
-                                  <Textarea className="max-h-52" {...field} />
-                                </FormControl>
-
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <div className="col-span-2">
-                          <FormField
-                            control={form.control}
-                            name="remarks"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Remarks</FormLabel>
-                                <FormControl>
-                                  <Textarea className="max-h-52" {...field} />
-                                </FormControl>
-
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit">Add new job</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-          <div className="grid grid-cols-7 grid-rows-5 gap-6 grid-flow-col">
-            <div className="col-span-3 row-span-full ">
-              {/* scroll above */}
-              <div className="grid grid-flow-row gap-6 ">
-                {queryStatus === "success" ? (
-                  jobsQuery.map((job: Job) => {
-                    const id = job.id;
-
-                    return (
-                      <div
-                        className={cn(
-                          "cursor-pointer rounded-lg",
-                          selected && (selected.id === job.id ? "outline" : "")
-                        )}
-                        onClick={() => setSelected(job)}
-                        key={job.id}
-                        accessKey={job.id}
-                        // tabIndex={1}
-                      >
-                        <Card>
-                          <CardHeader>
-                            <div className="flex justify-between items-baseline">
-                              <CardTitle className="text-xl">
-                                {job.role}
-                              </CardTitle>
-                              {session?.user?.email === job.createdBy?.email ? (
-                                <>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        className="p-0 h-8 w-8"
-                                      >
-                                        <DotsHorizontalIcon className="h-4 w-4 " />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                      className="w-56"
-                                      align="end"
-                                      forceMount
-                                    >
-                                      <DropdownMenuGroup>
-                                        <DropdownMenuItem>
-                                          <DeleteButton id={id} />
-                                        </DropdownMenuItem>
-                                      </DropdownMenuGroup>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </>
-                              ) : (
-                                <></>
+                          return (
+                            <div
+                              className={cn(
+                                "cursor-pointer rounded-lg",
+                                selected &&
+                                  (selected.id === job.id ? "outline" : "")
                               )}
+                              onClick={() => setSelected(job)}
+                              key={job.id}
+                              accessKey={job.id}
+                            >
+                              <Card>
+                                <CardHeader>
+                                  <div className="flex justify-between items-baseline">
+                                    <CardTitle className="text-xl">
+                                      {job.role}
+                                    </CardTitle>
+                                    {session?.user?.email ===
+                                    job.createdBy?.email ? (
+                                      <>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              className="p-0 h-8 w-8"
+                                            >
+                                              <DotsHorizontalIcon className="h-4 w-4 " />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent
+                                            className="w-56"
+                                            align="end"
+                                            forceMount
+                                          >
+                                            <DropdownMenuGroup>
+                                              <DropdownMenuItem>
+                                                <DeleteButton id={job.id} />
+                                              </DropdownMenuItem>
+                                            </DropdownMenuGroup>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </>
+                                    ) : (
+                                      <></>
+                                    )}
+                                  </div>
+                                  <CardDescription className="mt-0">
+                                    {job.clientName}
+                                  </CardDescription>
+                                  <div className="gap-1 flex">
+                                    <Badge className="text-xs">
+                                      £{job.salaryMax}
+                                    </Badge>
+                                    <Badge className="text-xs">
+                                      {job.location}
+                                    </Badge>
+                                  </div>
+                                </CardHeader>
+                                <CardFooter className="justify-between">
+                                  <div className="font-semibold text-sm">
+                                    {job.createdBy?.name!}
+                                  </div>
+                                </CardFooter>
+                              </Card>
                             </div>
-                            <CardDescription className="mt-0">
-                              {job.clientName}
-                            </CardDescription>
-                            <div className="gap-1 flex">
-                              <Badge className="text-xs">
-                                £{job.salaryMax}
-                              </Badge>
-                              <Badge className="text-xs">{job.location}</Badge>
-                            </div>
-                          </CardHeader>
-                          <CardFooter className="justify-between">
-                            <div className="font-semibold text-sm">
-                              {job.createdBy?.name!}
-                            </div>
-                          </CardFooter>
-                        </Card>
+                          );
+                        })
+                      ) : (
+                        <div>loading</div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                  {selected ? (
+                    <Card className="min-h-full col-span-2">
+                      <CardHeader>
+                        <CardTitle>{selected?.role}</CardTitle>
+                        <CardDescription>
+                          {selected?.clientName}, {selected?.location}
+                        </CardDescription>
+                        <CardDescription>
+                          £{selected?.salaryMin}-{selected?.salaryMax}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="mb-4">
+                          <h1 className="font-bold text-xl">Job Description</h1>
+                          <div>{selected?.jobDescription}</div>
+                        </div>
+                        <div className="mb-4">
+                          <h1 className="font-bold text-xl">Remarks</h1>
+                          <div>{selected?.remarks}</div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-between">
+                        <Button variant="outline">Cancel</Button>
+                        <Button>Deploy</Button>
+                      </CardFooter>
+                    </Card>
+                  ) : (
+                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-2">
+                      {selected}
+                    </div>
+                  )}
+                </div>
+
+                {/* <div className="col-span-3 row-span-5">
+                  {queryStatus === "success" ? (
+                    jobsQuery.map((job: Job) => {
+                      const id = job.id;
+
+                      return (
+                        <div
+                          className={cn(
+                            "cursor-pointer rounded-lg",
+                            selected &&
+                              (selected.id === job.id ? "outline" : "")
+                          )}
+                          onClick={() => setSelected(job)}
+                          key={job.id}
+                          accessKey={job.id}
+                        >
+                          <Card>
+                            <CardHeader>
+                              <div className="flex justify-between items-baseline">
+                                <CardTitle className="text-xl">
+                                  {job.role}
+                                </CardTitle>
+                                {session?.user?.email ===
+                                job.createdBy?.email ? (
+                                  <>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          className="p-0 h-8 w-8"
+                                        >
+                                          <DotsHorizontalIcon className="h-4 w-4 " />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent
+                                        className="w-56"
+                                        align="end"
+                                        forceMount
+                                      >
+                                        <DropdownMenuGroup>
+                                          <DropdownMenuItem>
+                                            <DeleteButton id={job.id} />
+                                          </DropdownMenuItem>
+                                        </DropdownMenuGroup>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </>
+                                ) : (
+                                  <></>
+                                )}
+                              </div>
+                              <CardDescription className="mt-0">
+                                {job.clientName}
+                              </CardDescription>
+                              <div className="gap-1 flex">
+                                <Badge className="text-xs">
+                                  £{job.salaryMax}
+                                </Badge>
+                                <Badge className="text-xs">
+                                  {job.location}
+                                </Badge>
+                              </div>
+                            </CardHeader>
+                            <CardFooter className="justify-between">
+                              <div className="font-semibold text-sm">
+                                {job.createdBy?.name!}
+                              </div>
+                            </CardFooter>
+                          </Card>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div>loading</div>
+                  )}
+                </div> */}
+              </TabsContent>
+
+              {/* <TabsContent value="members">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Add new member</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>
+                        Add new member for{" "}
+                        {
+                          teams.find((team: Team) => team.id === selectedTeam)
+                            ?.name
+                        }
+                      </DialogTitle>
+                      <DialogDescription>
+                        Enter user email here. Click add when you're done.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form className="grid gap-4 py-4" onSubmit={onMemberSubmit}>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">
+                          Email
+                        </Label>
+                        <Input
+                          id="name"
+                          value={member}
+                          onChange={(e) => setMember(e.target.value)}
+                          className="col-span-3"
+                        />
                       </div>
-                    );
-                  })
-                ) : (
-                  <div>loading</div>
-                )}
-              </div>
-            </div>
-            {selected ? (
-              <Card className="col-span-4 row-span-full">
-                <ScrollArea className="">
-                  <CardHeader>
-                    <CardTitle>{selected?.role}</CardTitle>
-                    <CardDescription>
-                      {selected?.clientName}, {selected?.location}
-                    </CardDescription>
-                    <CardDescription>
-                      £{selected?.salaryMin}-{selected?.salaryMax}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <h1 className="font-bold text-xl">Job Description</h1>
-                      <div>{selected?.jobDescription}</div>
-                    </div>
-                    <div className="mb-4">
-                      <h1 className="font-bold text-xl">Remarks</h1>
-                      <div>{selected?.remarks}</div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Button variant="outline">Cancel</Button>
-                    <Button>Deploy</Button>
-                  </CardFooter>
-                </ScrollArea>
-              </Card>
-            ) : (
-              <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-4 ">
-                {selected}
-              </div>
-            )}
+                      <DialogFooter>
+                        <Button type="submit">Add</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </TabsContent> */}
+            </Tabs>
           </div>
-        </div>
+        </>
       )}
     </>
   );
-};
+}
 
 export default TeamHeader;
 
+const sample = `
+What is Lorem Ipsum?
+
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+Why do we use it?
+
+It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
+
+Where does it come from?
+
+Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
+
+The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.
+What is Lorem Ipsum?
+
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+Why do we use it?
+
+It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
+
+Where does it come from?
+
+Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
+
+The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.What is Lorem Ipsum?
+
+Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
+Why do we use it?
+
+It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
+
+Where does it come from?
+
+Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
+
+The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.`;
+
 {
-  /* <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 items-center gap-8">
-                  <div className="grid items-center gap-4">
-                    <Label htmlFor="role">Role</Label>
-                    <Input name="role" className="" />
-                  </div>
-                  <div className="grid items-center gap-4">
-                    <Label htmlFor="location">Location</Label>
-                    <Input name="location" className="" />
-                  </div>
-                  <div className="grid items-center gap-4">
-                    <Label htmlFor="salaryMin">Minium Salary</Label>
-                    <Input
-                      required
-                      type="number"
-                      name="salaryMin"
-                      min="0"
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid items-center gap-4">
-                    <Label htmlFor="salaryMax">Maximum Salary</Label>
-                    <Input
-                      required
-                      type="number"
-                      name="salaryMax"
-                      min="0"
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid items-center gap-4 col-span-2">
-                    <Label htmlFor="jobDescription">Job Description</Label>
-                    <Textarea
-                      required
-                      name="jobDescription"
-                      className="max-h-52"
-                    ></Textarea>
-                  </div>
-                  <div className="grid items-center gap-4 col-span-2">
-                    <Label htmlFor="remarks">Remarks</Label>
-                    <Textarea name="remarks" className="max-h-52"></Textarea>
-                  </div>
+  /* <Form {...form}>
+                        <form
+                          onSubmit={form.handleSubmit(onSubmit)}
+                          className="space-y-8"
+                        >
+                          <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 items-center gap-8">
+                              <FormField
+                                control={form.control}
+                                name="role"
+                                render={({ field }) => (
+                                  <FormItem className="col-span-2">
+                                    <FormLabel>Role</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name="client"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Client</FormLabel>
+                                    <Select
+                                      onValueChange={field.onChange}
+                                      defaultValue={field.value}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select an existing client" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        {clientListQuery.map((client) => (
+                                          <SelectItem
+                                            value={client.id}
+                                            key={client.id}
+                                          >
+                                            {client.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="location"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Location</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="salaryMin"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Minimun Salary</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="salaryMax"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Maximun Salary</FormLabel>
+                                    <FormControl>
+                                      <Input type="number" {...field} />
+                                    </FormControl>
+
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="col-span-2">
+                                <FormField
+                                  control={form.control}
+                                  name="jobDescription"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Job Description</FormLabel>
+                                      <FormControl>
+                                        <Textarea
+                                          className="max-h-52"
+                                          {...field}
+                                        />
+                                      </FormControl>
+
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              <div className="col-span-2">
+                                <FormField
+                                  control={form.control}
+                                  name="remarks"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Remarks</FormLabel>
+                                      <FormControl>
+                                        <Textarea
+                                          className="max-h-52"
+                                          {...field}
+                                        />
+                                      </FormControl>
+
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button type="submit">Add new job</Button>
+                          </DialogFooter>
+                        </form>
+                      </Form> */
+}
+
+{
+  /* <>
+      <div className="md:hidden">
+        <Image
+          src="/examples/music-light.png"
+          width={1280}
+          height={1114}
+          alt="Music"
+          className="block dark:hidden"
+        />
+        <Image
+          src="/examples/music-dark.png"
+          width={1280}
+          height={1114}
+          alt="Music"
+          className="hidden dark:block"
+        />
+      </div>
+      <div className="hidden md:block">
+        <Menu />
+        <div className="border-t">
+          <div className="bg-background">
+            <div className="grid lg:grid-cols-5">
+              <Sidebar playlists={playlists} className="hidden lg:block" />
+              <div className="col-span-3 lg:col-span-4 lg:border-l">
+                <div className="h-full px-4 py-6 lg:px-8">
+                  <Tabs defaultValue="music" className="h-full space-y-6">
+                    <div className="space-between flex items-center">
+                      <TabsList>
+                        <TabsTrigger value="music" className="relative">
+                          Music
+                        </TabsTrigger>
+                        <TabsTrigger value="podcasts">Podcasts</TabsTrigger>
+                        <TabsTrigger value="live" disabled>
+                          Live
+                        </TabsTrigger>
+                      </TabsList>
+                      <div className="ml-auto mr-4">
+                        <Button>
+                          <PlusCircledIcon className="mr-2 h-4 w-4" />
+                          Add music
+                        </Button>
+                      </div>
+                    </div>
+                    <TabsContent
+                      value="music"
+                      className="border-none p-0 outline-none"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h2 className="text-2xl font-semibold tracking-tight">
+                            Listen Now
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            Top picks for you. Updated daily.
+                          </p>
+                        </div>
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="relative">
+                        <ScrollArea>
+                          <div className="flex space-x-4 pb-4">
+                            {listenNowAlbums.map((album) => (
+                              <AlbumArtwork
+                                key={album.name}
+                                album={album}
+                                className="w-[250px]"
+                                aspectRatio="portrait"
+                                width={250}
+                                height={330}
+                              />
+                            ))}
+                          </div>
+                          <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                      </div>
+                      <div className="mt-6 space-y-1">
+                        <h2 className="text-2xl font-semibold tracking-tight">
+                          Made for You
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Your personal playlists. Updated daily.
+                        </p>
+                      </div>
+                      <Separator className="my-4" />
+                      <div className="relative">
+                        <ScrollArea>
+                          <div className="flex space-x-4 pb-4">
+                            {madeForYouAlbums.map((album) => (
+                              <AlbumArtwork
+                                key={album.name}
+                                album={album}
+                                className="w-[150px]"
+                                aspectRatio="square"
+                                width={150}
+                                height={150}
+                              />
+                            ))}
+                          </div>
+                          <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                      </div>
+                    </TabsContent>
+                    <TabsContent
+                      value="podcasts"
+                      className="h-full flex-col border-none p-0 data-[state=active]:flex"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <h2 className="text-2xl font-semibold tracking-tight">
+                            New Episodes
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            Your favorite podcasts. Updated daily.
+                          </p>
+                        </div>
+                      </div>
+                      <Separator className="my-4" />
+                      <PodcastEmptyPlaceholder />
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </div>
-              <DialogFooter>
-                <Button type="submit">Add new job</Button>
-              </DialogFooter>
-            </form> */
+            </div>
+          </div>
+        </div>
+      </div>
+    </> */
 }
