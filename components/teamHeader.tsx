@@ -182,11 +182,11 @@ export function TeamHeader() {
             teams={teams}
             setSelectedTeam={setSelectedTeam}
           />
-          <div className="flex flex-grow min-h-[calc(100%-40px)] min-w-full pt-4 ">
+          <div className="flex flex-grow min-h-[calc(100%-40px)] min-w-full mt-2">
             {/* <div className="flex"></div> */}
             <Tabs defaultValue="jobs" className="flex flex-col min-w-full">
-              <div className="flex items-baseline justify-between">
-                <TabsList className="max-w-fit">
+              <div className="flex  justify-between items-center">
+                <TabsList className="max-w-fit my-2">
                   <TabsTrigger value="jobs">Jobs</TabsTrigger>
 
                   <TabsTrigger value="members">Members</TabsTrigger>
@@ -195,7 +195,9 @@ export function TeamHeader() {
                   <Dialog>
                     <DialogTrigger asChild>
                       {teams.find((team: Team) => team.id === selectedTeam) ? (
-                        <Button variant="outline">New job</Button>
+                        <Button variant="outline" className="mb-2">
+                          New job
+                        </Button>
                       ) : (
                         <></>
                       )}
@@ -265,11 +267,11 @@ export function TeamHeader() {
 
               <TabsContent
                 value="jobs"
-                className="flex min-h-[calc(100%-40px)]  flex-grow-0 py-4"
+                className="flex min-h-[calc(100%-56px)]  flex-grow-0 pb-4"
               >
                 <div className="grid grid-cols-3 grid-flow-col gap-4 min-w-full">
                   <ScrollArea className="max-h-full p-2 rounded-lg border bg-card text-card-foreground shadow-sm col-span-1">
-                    <div className="grid grid-flow-row grid-cols-1 gap-2 p-2">
+                    <div className="grid grid-flow-row grid-cols-1 gap-4 p-2">
                       {queryStatus === "success" ? (
                         jobsQuery.map((job: Job) => {
                           const id = job.id;
@@ -347,31 +349,36 @@ export function TeamHeader() {
                     </div>
                   </ScrollArea>
                   {selected ? (
-                    <Card className="min-h-full col-span-2">
-                      <CardHeader>
-                        <CardTitle>{selected?.role}</CardTitle>
-                        <CardDescription>
-                          {selected?.clientName}, {selected?.location}
-                        </CardDescription>
-                        <CardDescription>
-                          £{selected?.salaryMin}-{selected?.salaryMax}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="mb-4">
-                          <h1 className="font-bold text-xl">Job Description</h1>
-                          <div>{selected?.jobDescription}</div>
-                        </div>
-                        <div className="mb-4">
-                          <h1 className="font-bold text-xl">Remarks</h1>
-                          <div>{selected?.remarks}</div>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="flex justify-between">
-                        <Button variant="outline">Cancel</Button>
-                        <Button>Deploy</Button>
-                      </CardFooter>
-                    </Card>
+                    <ScrollArea className="max-h-full rounded-lg border bg-card text-card-foreground col-span-2">
+                      <Card className="min-h-full col-span-2">
+                        <CardHeader>
+                          <CardTitle>{selected?.role}</CardTitle>
+                          <CardDescription>
+                            {selected?.clientName}, {selected?.location}
+                          </CardDescription>
+                          <CardDescription>
+                            £{selected?.salaryMin}-{selected?.salaryMax}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="mb-4">
+                            <h1 className="font-bold text-xl">
+                              Job Description
+                            </h1>
+                            <div>{selected?.jobDescription}</div>
+                            <div>{sample}</div>
+                          </div>
+                          <div className="mb-4">
+                            <h1 className="font-bold text-xl">Remarks</h1>
+                            <div>{selected?.remarks}</div>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-between">
+                          <Button variant="outline">Cancel</Button>
+                          <Button>Deploy</Button>
+                        </CardFooter>
+                      </Card>
+                    </ScrollArea>
                   ) : (
                     <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-2">
                       {selected}

@@ -20,6 +20,7 @@ export async function GET(
     const jobs = await prisma.job.findMany({
       where: { team: { id: String(teamId) } },
       include: { createdBy: true },
+      orderBy: { createdAt: "desc" },
     });
     // console.log(jobs);
     // console.log("new jobs");

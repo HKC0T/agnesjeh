@@ -28,12 +28,6 @@ export function SiteHeader() {
             <>
               <InvitesMenu />
 
-              <Link href="/jobs" className="headerButton">
-                Jobs
-              </Link>
-              <Link href="/clients" className="headerButton">
-                Clients
-              </Link>
               <LogOut />
             </>
           ) : (
