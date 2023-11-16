@@ -26,7 +26,7 @@ export default async function Page() {
           <div className="grid  gap-6">
             <GoogleButton />
           </div>
-          <div className="relative">
+          {/* <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
             </div>
@@ -35,16 +35,16 @@ export default async function Page() {
                 Or continue with demo account
               </span>
             </div>
-          </div>
+          </div> */}
 
-          <div className="grid gap-2">
+          {/* <div className="grid gap-2">
             <Label htmlFor="email">Username</Label>
             <Input id="email" type="email" placeholder="admin" />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" placeholder="admin" />
-          </div>
+          </div> */}
         </CardContent>
         <CardFooter>
           <Button className="w-full">Login</Button>

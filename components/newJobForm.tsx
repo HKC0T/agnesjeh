@@ -64,30 +64,33 @@ export default function NewJobForm({
   session,
   isAdmin,
   teams,
+  clientListQuery,
+  clientListQueryStatus,
 }: {
   selectedTeam: String;
   session: Session;
   isAdmin: Boolean;
   teams: Team[];
+  clientListQuery: any;
+  clientListQueryStatus: "error" | "success" | "pending";
 }) {
   const [showNewJobForm, setShowNewJobForm] = useState(false);
   const [newClient, setNewClient] = useState(false);
 
   const queryClient = useQueryClient();
 
-  const {
-    data: clientListQuery,
-    status: clientListQueryStatus,
-    isLoading,
-  } = useQuery({
-    queryKey: ["clients", selectedTeam],
-    queryFn: async () => {
-      const response = await axios.get(`/api/clients/${selectedTeam}`);
-      console.log("client req");
-      return response.data;
-    },
-    enabled: !!selectedTeam,
-  });
+  // const {
+  //   data: clientListQuery,
+  //   status: clientListQueryStatus,
+  // } = useQuery({
+  //   queryKey: ["clients", selectedTeam],
+  //   queryFn: async () => {
+  //     const response = await axios.get(`/api/clients/${selectedTeam}`);
+  //     console.log("client req");
+  //     return response.data;
+  //   },
+  //   enabled: !!selectedTeam,
+  // });
 
   const { mutate: addNewJob, status: newJobStatus } = useMutation({
     mutationFn: (values: z.infer<typeof formSchema>) => {

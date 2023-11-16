@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
+  AlertCircle,
   Check,
   ChevronsUpDown,
   Landmark,
@@ -33,10 +34,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 import { PlusCircledIcon } from "@radix-ui/react-icons";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { Session } from "next-auth";
 
@@ -53,8 +56,10 @@ export default function SelectTeam({
 }) {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
+  const [error, setError] = React.useState(false);
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
 
+  const queryClient = useQueryClient();
   const { mutate: newTeam } = useMutation({
     mutationFn: () => {
       return axios.post("/api/teams", {
@@ -64,6 +69,10 @@ export default function SelectTeam({
     },
     onSuccess: () => {
       setShowNewTeamDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["teams", session.user.id] });
+    },
+    onError: () => {
+      setError(true);
     },
   });
 
@@ -156,6 +165,15 @@ export default function SelectTeam({
               />
             </div>
           </div>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                Team name taken. Please enter another team name.
+              </AlertDescription>
+            </Alert>
+          )}
           <DialogFooter>
             <Button
               variant="outline"

@@ -24,26 +24,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 import DeleteButton from "@/components/deleteButton";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -75,18 +59,16 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export function TeamHeader() {
   const [selectedTeam, setSelectedTeam] = React.useState("");
   const [selected, setSelected] = React.useState<Job | null>(null);
-  //change selected to jobid
+
   const [member, setMember] = React.useState("");
   const { data: session, status: sessionStatus } = useSession({
     required: true,
   });
 
-  //change query name check parallel query
-  const [isOpen, setIsOpen] = React.useState(false);
-
   const isAdmin = React.useCallback(() => {
     return session!.user.adminOf.some(({ id }) => id === selectedTeam);
   }, [selectedTeam, session]);
+  //need invalidate after teams or edit
 
   const { data: teams, status: teamQueryStatus } = useQuery({
     queryKey: ["teams", session?.user.id],
@@ -147,11 +129,16 @@ export function TeamHeader() {
     enabled: !!selectedTeam,
   });
 
-  function onMemberSubmit(event: React.FormEvent<HTMLInputElement>) {
-    event.preventDefault();
-    console.log(member);
-    addMember();
-  }
+  const { data: clientListQuery, status: clientListQueryStatus } = useQuery({
+    queryKey: ["clients", selectedTeam],
+    queryFn: async () => {
+      const response = await axios.get(`/api/clients/${selectedTeam}`);
+      console.log("client req");
+      return response.data;
+    },
+    enabled: !!selectedTeam,
+  });
+
   // console.log(selectedTeam);
 
   return (
@@ -182,52 +169,11 @@ export function TeamHeader() {
                       session={session!}
                       isAdmin={isAdmin()}
                       teams={teams}
+                      clientListQuery={clientListQuery}
+                      clientListQueryStatus={clientListQueryStatus}
                     />
                   </TabsContent>
                   <TabsContent value="team">
-                    {/* <Dialog>
-                      <DialogTrigger asChild>
-                        {isAdmin() && (
-                          <Button variant="outline" className="mb-2">
-                            New member
-                          </Button>
-                        )}
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                          <DialogTitle>
-                            Add new member for{" "}
-                            {
-                              teams.find(
-                                (team: Team) => team.id === selectedTeam
-                              )?.name
-                            }
-                          </DialogTitle>
-                          <DialogDescription>
-                            Enter user email here. Click add when you're done.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form
-                          className="grid gap-4 py-4"
-                          onSubmit={onMemberSubmit}
-                        >
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">
-                              Email
-                            </Label>
-                            <Input
-                              id="name"
-                              value={member}
-                              onChange={(e) => setMember(e.target.value)}
-                              className="col-span-3"
-                            />
-                          </div>
-                          <DialogFooter>
-                            <Button type="submit">Add</Button>
-                          </DialogFooter>
-                        </form>
-                      </DialogContent>
-                    </Dialog> */}
                     <NewMemberDialog
                       teams={teams}
                       selectedTeam={selectedTeam}
