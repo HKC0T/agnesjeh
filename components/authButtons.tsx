@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export function GoogleButton() {
   const handleClick = () => {
-    signIn("google");
+    signIn("google", { callbackUrl: "/" });
   };
   return (
     <Button variant="outline" onClick={handleClick}>

@@ -14,7 +14,7 @@ export default async function Home() {
   // const invites = await prisma.invites.findMany({
   //   where: { inviteeEmail: userEmail },
   // });
-  console.log("inv req");
+  console.log(session?.user.image);
   // function joinTeam(inviteId: string) {}
 
   await wait(1000);

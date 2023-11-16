@@ -1,6 +1,3 @@
-import prisma from "@/prisma/db";
-import { LoginForm } from "@/components/loginForm";
-import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { GoogleButton } from "@/components/authButtons";
 
@@ -12,6 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export default async function Page() {
   return (
@@ -24,16 +23,31 @@ export default async function Page() {
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
-          <div className="grid grid-cols-2 gap-6">
-            <Button variant="outline">
-              <Icons.gitHub className="mr-2 h-4 w-4" />
-              Github
-            </Button>
+          <div className="grid  gap-6">
             <GoogleButton />
+          </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with demo account
+              </span>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="email">Username</Label>
+            <Input id="email" type="email" placeholder="admin" />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input id="password" type="password" placeholder="admin" />
           </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full">Create account</Button>
+          <Button className="w-full">Login</Button>
         </CardFooter>
       </Card>
     </main>

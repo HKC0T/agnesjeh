@@ -8,6 +8,7 @@ declare module "next-auth" {
     user: {
       id: string;
       teams: Team[];
+      adminOf: Team[];
     } & DefaultSession["user"];
   }
 }
@@ -15,5 +16,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     teams: Team[];
+    adminOf: Team[];
   }
 }

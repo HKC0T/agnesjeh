@@ -24,13 +24,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
 import DeleteButton from "@/components/deleteButton";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import {
@@ -55,84 +55,55 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import prisma from "@/prisma/db";
 import { useSession } from "next-auth/react";
 import { Client, Job, Team } from "@prisma/client";
 import { useQuery, useMutation, useQueries } from "@tanstack/react-query";
 import axios from "axios";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { SubmitHandler } from "react-hook-form";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import { NewMemberDialog } from "./newMemberDialog";
 import SelectTeam from "./selectTeam";
 import NewJobForm from "./newJobForm";
-
-// const formSchema = z.object({
-//   role: z.string().min(2, {
-//     message: "Role must be at least 2 characters.",
-//   }),
-//   client: z.string(),
-//   location: z
-//     .string()
-//     .min(2, { message: "Location must be at least 2 characters." }),
-//   salaryMin: z.coerce
-//     .number({ invalid_type_error: "Salary must be a number." })
-//     .positive({ message: "Salary must be greater than 0" }),
-//   salaryMax: z.coerce
-//     .number({ invalid_type_error: "Salary must be a number." })
-//     .positive(),
-//   jobDescription: z.string().nonempty(),
-//   remarks: z.string().optional(),
-// });
+import { CandidateSubmitted } from "./candidateSubmitted";
+import NewCandidateForm from "./newCandidateForm";
+import { MemberCard } from "./memberCard";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function TeamHeader() {
   const [selectedTeam, setSelectedTeam] = React.useState("");
   const [selected, setSelected] = React.useState<Job | null>(null);
+  //change selected to jobid
   const [member, setMember] = React.useState("");
   const { data: session, status: sessionStatus } = useSession({
     required: true,
   });
-  // function handleSelected(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
-  //   console.log(e.currentTarget.accessKey);
-  //   setSelected("");
-  // }
-  // const form = useForm<z.infer<typeof formSchema>>({
-  //   resolver: zodResolver(formSchema),
-  //   defaultValues: {
-  //     role: "",
-  //     location: "",
 
-  //     jobDescription: "",
-  //   },
-  // });
   //change query name check parallel query
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const isAdmin = React.useCallback(() => {
+    return session!.user.adminOf.some(({ id }) => id === selectedTeam);
+  }, [selectedTeam, session]);
+
   const { data: teams, status: teamQueryStatus } = useQuery({
     queryKey: ["teams", session?.user.id],
+
     queryFn: async () => {
       const response = await axios.get(`/api/teams/${session?.user.id}`);
       console.log("teams req");
 
+      console.log("default team");
+      setSelectedTeam(response.data[0].id);
+
       return response.data;
     },
+
     enabled: sessionStatus === "authenticated",
   });
+
   const { data: jobsQuery, status: queryStatus } = useQuery({
     queryKey: ["jobs", selectedTeam],
     queryFn: async () => {
@@ -144,15 +115,19 @@ export function TeamHeader() {
     enabled: !!selectedTeam,
   });
 
-  // const { mutate: addNewJob } = useMutation({
-  //   mutationFn: (values: z.infer<typeof formSchema>) => {
-  //     return axios.post("/api/jobs", {
-  //       user: session?.user.email,
-  //       job: values,
-  //       team: selectedTeam,
-  //     });
-  //   },
-  // });
+  const { data: candidatesQuery, status: candidatesStatus } = useQuery({
+    queryKey: ["candidates", selected ? selected.id : ""],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/candidates/${selected ? selected.id : ""}`
+      );
+      console.log("cans req");
+
+      return response.data;
+    },
+    enabled: !!selected,
+  });
+
   const { mutate: addMember } = useMutation({
     mutationFn: () => {
       return axios.post("/api/invites", {
@@ -161,10 +136,16 @@ export function TeamHeader() {
       });
     },
   });
+  const { data: membersQuery, status: membersStatus } = useQuery({
+    queryKey: ["members", selectedTeam],
+    queryFn: async () => {
+      const response = await axios.get(`/api/members/${selectedTeam}`);
+      console.log("members req");
 
-  // function onSubmit(values: z.infer<typeof formSchema>) {
-  //   addNewJob(values);
-  // }
+      return response.data;
+    },
+    enabled: !!selectedTeam,
+  });
 
   function onMemberSubmit(event: React.FormEvent<HTMLInputElement>) {
     event.preventDefault();
@@ -175,333 +156,300 @@ export function TeamHeader() {
 
   return (
     <>
+      {session && (
+        <SelectTeam
+          selectedTeam={selectedTeam}
+          teams={teams}
+          setSelectedTeam={setSelectedTeam}
+          session={session!}
+        />
+      )}
       {teams && (
         <>
-          <SelectTeam
-            selectedTeam={selectedTeam}
-            teams={teams}
-            setSelectedTeam={setSelectedTeam}
-          />
-          <div className="flex flex-grow min-h-[calc(100%-40px)] min-w-full mt-2">
-            {/* <div className="flex"></div> */}
-            <Tabs defaultValue="jobs" className="flex flex-col min-w-full">
-              <div className="flex  justify-between items-center">
-                <TabsList className="max-w-fit my-2">
-                  <TabsTrigger value="jobs">Jobs</TabsTrigger>
+          <div className="flex flex-row min-h-[calc(100%-40px)] py-3">
+            <div className="flex flex-grow min-h-[calc(100%-40px)] w-1/3">
+              {/* <div className="flex"></div> */}
+              <Tabs defaultValue="jobs" className="flex flex-col min-w-full">
+                <div className="flex  justify-between items-center">
+                  <TabsList className="max-w-fit my-2">
+                    <TabsTrigger value="jobs">Jobs</TabsTrigger>
 
-                  <TabsTrigger value="members">Members</TabsTrigger>
-                </TabsList>
-                <TabsContent value="jobs">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      {teams.find((team: Team) => team.id === selectedTeam) ? (
-                        <Button variant="outline" className="mb-2">
-                          New job
-                        </Button>
-                      ) : (
-                        <></>
+                    <TabsTrigger value="team">Team</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="jobs">
+                    <NewJobForm
+                      selectedTeam={selectedTeam}
+                      session={session!}
+                      isAdmin={isAdmin()}
+                      teams={teams}
+                    />
+                  </TabsContent>
+                  <TabsContent value="team">
+                    {/* <Dialog>
+                      <DialogTrigger asChild>
+                        {isAdmin() && (
+                          <Button variant="outline" className="mb-2">
+                            New member
+                          </Button>
+                        )}
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>
+                            Add new member for{" "}
+                            {
+                              teams.find(
+                                (team: Team) => team.id === selectedTeam
+                              )?.name
+                            }
+                          </DialogTitle>
+                          <DialogDescription>
+                            Enter user email here. Click add when you're done.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form
+                          className="grid gap-4 py-4"
+                          onSubmit={onMemberSubmit}
+                        >
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">
+                              Email
+                            </Label>
+                            <Input
+                              id="name"
+                              value={member}
+                              onChange={(e) => setMember(e.target.value)}
+                              className="col-span-3"
+                            />
+                          </div>
+                          <DialogFooter>
+                            <Button type="submit">Add</Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog> */}
+                    <NewMemberDialog
+                      teams={teams}
+                      selectedTeam={selectedTeam}
+                      isAdmin={isAdmin()}
+                    />
+                  </TabsContent>
+                </div>
+
+                <TabsContent
+                  value="jobs"
+                  className="flex max-h-[calc(100%-56px)]  flex-grow-0 "
+                >
+                  {jobsQuery && (
+                    <div className="grid grid-cols-3 grid-flow-col gap-4 min-w-full max-h-full mt-2">
+                      <ScrollArea className="max-h-full p-2 rounded-lg border bg-card text-card-foreground shadow-sm col-span-3 ">
+                        {jobsQuery.length > 0 ? (
+                          <div className="grid grid-flow-row grid-cols-1 gap-4 p-2">
+                            {queryStatus === "success" ? (
+                              jobsQuery.map((job: Job) => {
+                                const id = job.id;
+
+                                return (
+                                  <div
+                                    className={cn(
+                                      "cursor-pointer rounded-lg",
+                                      selected &&
+                                        (selected.id === job.id
+                                          ? "outline"
+                                          : "")
+                                    )}
+                                    onClick={() => setSelected(job)}
+                                    key={job.id}
+                                    accessKey={job.id}
+                                  >
+                                    <Card>
+                                      <CardHeader>
+                                        <div className="flex justify-between items-baseline">
+                                          <CardTitle className="text-xl">
+                                            {job.role}
+                                          </CardTitle>
+                                          {session?.user?.email ===
+                                          job.createdBy?.email ? (
+                                            <>
+                                              <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                  <Button
+                                                    variant="ghost"
+                                                    className="p-0 h-8 w-8"
+                                                  >
+                                                    <DotsHorizontalIcon className="h-4 w-4 " />
+                                                  </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                  className="w-56"
+                                                  align="end"
+                                                  forceMount
+                                                >
+                                                  <DropdownMenuGroup>
+                                                    <DropdownMenuItem>
+                                                      <DeleteButton
+                                                        id={job.id}
+                                                      />
+                                                    </DropdownMenuItem>
+                                                  </DropdownMenuGroup>
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                            </>
+                                          ) : (
+                                            <></>
+                                          )}
+                                        </div>
+                                        <CardDescription className="mt-0">
+                                          {job.clientName}
+                                        </CardDescription>
+                                        <div className="gap-1 flex">
+                                          <Badge className="text-xs">
+                                            £{job.salaryMax}
+                                          </Badge>
+                                          <Badge className="text-xs">
+                                            {job.location}
+                                          </Badge>
+                                        </div>
+                                      </CardHeader>
+                                      <CardFooter className="justify-between">
+                                        <div className="font-semibold text-sm">
+                                          {job.createdBy?.name!}
+                                        </div>
+                                      </CardFooter>
+                                    </Card>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div>loading</div>
+                            )}
+                          </div>
+                        ) : (
+                          <h1 className="text-center">There is no jobs.</h1>
+                        )}
+                      </ScrollArea>
+                    </div>
+                  )}
+                </TabsContent>
+                <TabsContent
+                  value="team"
+                  className="flex max-h-[calc(100%-56px)]  flex-grow-0"
+                >
+                  <div className="grid grid-cols-3 grid-flow-col gap-4 min-w-full max-h-full">
+                    <ScrollArea className="max-h-full rounded-lg border bg-card text-card-foreground shadow-sm col-span-3 ">
+                      {membersStatus === "success" && (
+                        <MemberCard
+                          selectedTeam={selectedTeam}
+                          session={session!}
+                          isAdmin={isAdmin()}
+                          membersQuery={membersQuery}
+                          membersStatus={membersStatus}
+                        />
                       )}
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[800px] ">
-                      <DialogHeader>
-                        <DialogTitle>
-                          New job for{" "}
-                          {
-                            teams.find((team: Team) => team.id === selectedTeam)
-                              ?.name
-                          }
-                        </DialogTitle>
-                        <DialogDescription>
-                          Add new job to your team here. Click "Add new job"
-                          when you're done.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <NewJobForm
-                        selectedTeam={selectedTeam}
+                    </ScrollArea>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+            <div className="flex flex-grow ml-4 max-h-[calc(100%-40px)] w-2/3">
+              <Tabs defaultValue="details" className="flex flex-col min-w-full">
+                <div className="flex justify-between items-center">
+                  <TabsList className="max-w-fit my-2">
+                    <TabsTrigger value="details">Details</TabsTrigger>
+
+                    <TabsTrigger value="candidates">Candidates</TabsTrigger>
+                  </TabsList>
+                  {selected && (
+                    <TabsContent value="candidates">
+                      <NewCandidateForm
+                        selected={selected}
                         session={session!}
                       />
-                    </DialogContent>
-                  </Dialog>
-                </TabsContent>
-                <TabsContent value="members">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline">Add new member</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>
-                          Add new member for{" "}
-                          {
-                            teams.find((team: Team) => team.id === selectedTeam)
-                              ?.name
-                          }
-                        </DialogTitle>
-                        <DialogDescription>
-                          Enter user email here. Click add when you're done.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form
-                        className="grid gap-4 py-4"
-                        onSubmit={onMemberSubmit}
-                      >
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="name" className="text-right">
-                            Email
-                          </Label>
-                          <Input
-                            id="name"
-                            value={member}
-                            onChange={(e) => setMember(e.target.value)}
-                            className="col-span-3"
-                          />
-                        </div>
-                        <DialogFooter>
-                          <Button type="submit">Add</Button>
-                        </DialogFooter>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </TabsContent>
-              </div>
-
-              <TabsContent
-                value="jobs"
-                className="flex min-h-[calc(100%-56px)]  flex-grow-0 pb-4"
-              >
-                <div className="grid grid-cols-3 grid-flow-col gap-4 min-w-full">
-                  <ScrollArea className="max-h-full p-2 rounded-lg border bg-card text-card-foreground shadow-sm col-span-1">
-                    <div className="grid grid-flow-row grid-cols-1 gap-4 p-2">
-                      {queryStatus === "success" ? (
-                        jobsQuery.map((job: Job) => {
-                          const id = job.id;
-
-                          return (
-                            <div
-                              className={cn(
-                                "cursor-pointer rounded-lg",
-                                selected &&
-                                  (selected.id === job.id ? "outline" : "")
-                              )}
-                              onClick={() => setSelected(job)}
-                              key={job.id}
-                              accessKey={job.id}
-                            >
-                              <Card>
-                                <CardHeader>
-                                  <div className="flex justify-between items-baseline">
-                                    <CardTitle className="text-xl">
-                                      {job.role}
-                                    </CardTitle>
-                                    {session?.user?.email ===
-                                    job.createdBy?.email ? (
-                                      <>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              className="p-0 h-8 w-8"
-                                            >
-                                              <DotsHorizontalIcon className="h-4 w-4 " />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent
-                                            className="w-56"
-                                            align="end"
-                                            forceMount
-                                          >
-                                            <DropdownMenuGroup>
-                                              <DropdownMenuItem>
-                                                <DeleteButton id={job.id} />
-                                              </DropdownMenuItem>
-                                            </DropdownMenuGroup>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </>
-                                    ) : (
-                                      <></>
-                                    )}
-                                  </div>
-                                  <CardDescription className="mt-0">
-                                    {job.clientName}
-                                  </CardDescription>
-                                  <div className="gap-1 flex">
-                                    <Badge className="text-xs">
-                                      £{job.salaryMax}
-                                    </Badge>
-                                    <Badge className="text-xs">
-                                      {job.location}
-                                    </Badge>
-                                  </div>
-                                </CardHeader>
-                                <CardFooter className="justify-between">
-                                  <div className="font-semibold text-sm">
-                                    {job.createdBy?.name!}
-                                  </div>
-                                </CardFooter>
-                              </Card>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div>loading</div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                  {selected ? (
-                    <ScrollArea className="max-h-full rounded-lg border bg-card text-card-foreground col-span-2">
-                      <Card className="min-h-full col-span-2">
-                        <CardHeader>
-                          <CardTitle>{selected?.role}</CardTitle>
-                          <CardDescription>
-                            {selected?.clientName}, {selected?.location}
-                          </CardDescription>
-                          <CardDescription>
-                            £{selected?.salaryMin}-{selected?.salaryMax}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="mb-4">
-                            <h1 className="font-bold text-xl">
-                              Job Description
-                            </h1>
-                            <div>{selected?.jobDescription}</div>
-                            <div>{sample}</div>
-                          </div>
-                          <div className="mb-4">
-                            <h1 className="font-bold text-xl">Remarks</h1>
-                            <div>{selected?.remarks}</div>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-between">
-                          <Button variant="outline">Cancel</Button>
-                          <Button>Deploy</Button>
-                        </CardFooter>
-                      </Card>
-                    </ScrollArea>
-                  ) : (
-                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-2">
-                      {selected}
-                    </div>
+                    </TabsContent>
                   )}
                 </div>
 
-                {/* <div className="col-span-3 row-span-5">
-                  {queryStatus === "success" ? (
-                    jobsQuery.map((job: Job) => {
-                      const id = job.id;
-
-                      return (
-                        <div
-                          className={cn(
-                            "cursor-pointer rounded-lg",
-                            selected &&
-                              (selected.id === job.id ? "outline" : "")
-                          )}
-                          onClick={() => setSelected(job)}
-                          key={job.id}
-                          accessKey={job.id}
-                        >
-                          <Card>
-                            <CardHeader>
-                              <div className="flex justify-between items-baseline">
-                                <CardTitle className="text-xl">
-                                  {job.role}
-                                </CardTitle>
-                                {session?.user?.email ===
-                                job.createdBy?.email ? (
-                                  <>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          className="p-0 h-8 w-8"
-                                        >
-                                          <DotsHorizontalIcon className="h-4 w-4 " />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent
-                                        className="w-56"
-                                        align="end"
-                                        forceMount
-                                      >
-                                        <DropdownMenuGroup>
-                                          <DropdownMenuItem>
-                                            <DeleteButton id={job.id} />
-                                          </DropdownMenuItem>
-                                        </DropdownMenuGroup>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </>
-                                ) : (
-                                  <></>
-                                )}
-                              </div>
-                              <CardDescription className="mt-0">
-                                {job.clientName}
-                              </CardDescription>
-                              <div className="gap-1 flex">
-                                <Badge className="text-xs">
-                                  £{job.salaryMax}
-                                </Badge>
-                                <Badge className="text-xs">
-                                  {job.location}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardFooter className="justify-between">
-                              <div className="font-semibold text-sm">
-                                {job.createdBy?.name!}
-                              </div>
-                            </CardFooter>
-                          </Card>
-                        </div>
-                      );
-                    })
+                <TabsContent
+                  value="details"
+                  className="flex max-h-[calc(100%-56px)]  flex-grow-0"
+                >
+                  {selected ? (
+                    <div className="grid grid-cols-3 grid-flow-col gap-4 min-w-full max-h-full mt-2">
+                      <ScrollArea className="max-h-full rounded-lg border bg-card text-card-foreground col-span-3">
+                        <Card className="min-h-full col-span-3">
+                          <CardHeader>
+                            <CardTitle>{selected?.role}</CardTitle>
+                            <CardDescription>
+                              {selected?.clientName}, {selected?.location}
+                            </CardDescription>
+                            <CardDescription>
+                              £{selected?.salaryMin}-{selected?.salaryMax}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="mb-4">
+                              <h1 className="font-bold text-xl">
+                                Job Description
+                              </h1>
+                              <div>{selected?.jobDescription}</div>
+                            </div>
+                            <div className="mb-4">
+                              <h1 className="font-bold text-xl">Remarks</h1>
+                              <div>{selected?.remarks}</div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </ScrollArea>
+                    </div>
                   ) : (
-                    <div>loading</div>
+                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-3">
+                      {selected}
+                    </div>
                   )}
-                </div> */}
-              </TabsContent>
-
-              {/* <TabsContent value="members">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Add new member</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>
-                        Add new member for{" "}
-                        {
-                          teams.find((team: Team) => team.id === selectedTeam)
-                            ?.name
-                        }
-                      </DialogTitle>
-                      <DialogDescription>
-                        Enter user email here. Click add when you're done.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form className="grid gap-4 py-4" onSubmit={onMemberSubmit}>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
-                          Email
-                        </Label>
-                        <Input
-                          id="name"
-                          value={member}
-                          onChange={(e) => setMember(e.target.value)}
-                          className="col-span-3"
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit">Add</Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </TabsContent> */}
-            </Tabs>
+                </TabsContent>
+                <TabsContent
+                  value="candidates"
+                  className="flex max-h-[calc(100%-56px)]  flex-grow-0"
+                >
+                  {selected ? (
+                    <div className="grid grid-cols-3 grid-flow-col gap-4 min-w-full min-h-full ">
+                      <ScrollArea className="max-h-full rounded-lg border bg-card text-card-foreground col-span-3 mb-2">
+                        <Card className="min-h-full col-span-3">
+                          <CardHeader>
+                            <CardTitle>{selected.role}</CardTitle>
+                            <CardDescription>
+                              {selected?.clientName}, {selected?.location}
+                            </CardDescription>
+                            <CardDescription>
+                              £{selected?.salaryMin}-{selected?.salaryMax}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <h1 className="font-bold text-xl">Candidates</h1>
+                            {candidatesQuery &&
+                              candidatesQuery.map((user) => {
+                                return (
+                                  <Card key={user.email} className="p-2 mt-4">
+                                    <CandidateSubmitted user={user} />
+                                  </Card>
+                                );
+                              })}
+                          </CardContent>
+                          {/* <CardFooter className="flex justify-between">
+                            <Button variant="outline">Cancel</Button>
+                            <Button>Deploy</Button>
+                          </CardFooter> */}
+                        </Card>
+                      </ScrollArea>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border bg-card text-card-foreground shadow-sm col-span-3">
+                      {selected}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         </>
       )}
@@ -511,7 +459,7 @@ export function TeamHeader() {
 
 export default TeamHeader;
 
-const sample = `
+export const sample = `
 What is Lorem Ipsum?
 
 Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.

@@ -1,9 +1,9 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { SiteHeader } from "@/components/siteHeader";
-import { AuthProvider } from "@/components/auth-provider";
-import QueryProviders from "@/components/query-provider";
+import { SiteHeader } from "@/components/Nav/siteHeader";
+import { AuthProvider } from "@/components/provider/auth-provider";
+import QueryProviders from "@/components/provider/query-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 

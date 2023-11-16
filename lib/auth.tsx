@@ -57,6 +57,7 @@ export const authConfig: NextAuthOptions = {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.teams = token.teams;
+        session.user.adminOf = token.adminOf;
       }
 
       return session;
@@ -68,6 +69,7 @@ export const authConfig: NextAuthOptions = {
         },
         include: {
           teams: true,
+          adminOf: true,
         },
       });
       if (!dbUser) {
@@ -82,6 +84,7 @@ export const authConfig: NextAuthOptions = {
         name: dbUser.name,
         email: dbUser.email,
         teams: dbUser.teams,
+        adminOf: dbUser.adminOf,
       };
     },
     // async redirect(params: { url: string }) {

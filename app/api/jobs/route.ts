@@ -20,7 +20,12 @@ export async function POST(req: Request) {
     await prisma.job.create({
       data: {
         role,
-        client: { connect: { id: clientName } },
+        client: {
+          connectOrCreate: {
+            where: { name: clientName },
+            create: { name: clientName },
+          },
+        },
         location,
         salaryMax,
         salaryMin,
@@ -33,6 +38,17 @@ export async function POST(req: Request) {
         client: true,
         createdBy: true,
         team: true,
+      },
+    });
+    await prisma.client.update({
+      where: { name: clientName },
+      data: {
+        teams: {
+          connect: { id: teamId },
+        },
+      },
+      include: {
+        teams: true,
       },
     });
     console.log("job added");

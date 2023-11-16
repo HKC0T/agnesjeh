@@ -35,20 +35,21 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  jobs          Job[]
-  sessions      Session[]
-  teams         Team[]    @relation("TeamToUser")
-  invites       Invites[]
-  adminOf       Team[]    @relation("TeamAdmin")
+  id                 String               @id @default(cuid())
+  name               String?
+  role               Role                 @default(USER)
+  createdAt          DateTime             @default(now())
+  email              String?              @unique
+  emailVerified      DateTime?
+  image              String?
+  updatedAt          DateTime             @updatedAt
+  accounts           Account[]
+  jobs               Job[]
+  sessions           Session[]
+  teams              Team[]               @relation("TeamToUser")
+  invites            Invites[]
+  adminOf            Team[]               @relation("TeamAdmin")
+  candidateSubmitted CandidateSubmitted[]
 }
 
 model VerificationToken {
@@ -80,9 +81,9 @@ model Invites {
 }
 
 model Job {
-  id             String      @id @default(cuid())
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id             String               @id @default(cuid())
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
   role           String
   clientName     String
   location       String?
@@ -92,11 +93,14 @@ model Job {
   remarks        String?
   jobOwnerEmail  String?
   teamId         String
-  client         Client      @relation(fields: [clientName], references: [name])
-  createdBy      User?       @relation(fields: [jobOwnerEmail], references: [email])
-  team           Team        @relation(fields: [teamId], references: [id])
-  status         JobStatus   @default(URGENT)
-  active         Active      @default(ACTIVE)
+  client         Client               @relation(fields: [clientName], references: [name])
+  createdBy      User?                @relation(fields: [jobOwnerEmail], references: [email])
+  team           Team                 @relation(fields: [teamId], references: [id])
+  status         JobStatus            @default(NORMAL)
+  active         Active               @default(ACTIVE)
+  candidates     CandidateSubmitted[]
+  
+
   // interviews     Interview[]
 }
 
@@ -107,12 +111,16 @@ model Client {
   teams Team[] @relation("ClientToTeam")
 }
 
-// model Candidate {
-//   id          String      @id @default(cuid())
-//   name        String
-//   ProfileLink String?
-//   interviews  Interview[]
-// }
+model CandidateSubmitted {
+  jobId       String
+  candidateName String
+  profileLink String?
+  submittedBy String
+  job         Job       @relation(fields: [jobId], references: [id])
+  user        User      @relation(fields: [submittedBy], references: [email])
+
+  @@unique([jobId, candidateName, submittedBy])
+}
 
 // model Interview {
 //   id          String    @id @default(cuid())

@@ -1,6 +1,7 @@
 "use client";
-
+import { LogOutIcon } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { InvitesMenu } from "./invitesMenu";
+import { AccountMenu } from "./accountMenu";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
@@ -21,17 +23,14 @@ export function SiteHeader() {
           <Link href="/" className="text-lg font-bold">
             AgnesJeh
           </Link>
-          <h1>{session?.user?.name}</h1>
         </div>
-        <div className="flex items-center gap-x-2 text-xs font-medium">
-          {session ? (
+        <div className="flex items-center gap-x-4 text-xs font-medium">
+          {session && (
             <>
               <InvitesMenu />
 
-              <LogOut />
+              <AccountMenu session={session} />
             </>
-          ) : (
-            status !== "loading" && <LogIn />
           )}
         </div>
       </nav>
@@ -56,7 +55,7 @@ function LogOut() {
         //{ callbackUrl: "/login" }
       }
     >
-      Log Out
+      <LogOutIcon />
     </button>
   );
 }
