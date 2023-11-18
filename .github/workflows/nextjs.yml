@@ -30,8 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     
-      - name: Env
-        run: echo "URL is ${{vars.DATABASE_URL}}"
+
       - name: Checkout
         uses: actions/checkout@v3
       - name: Detect package manager
@@ -76,6 +75,8 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
       - name: Install dependencies
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+      - name: Env var
+        run: echo "URL is ${{vars.DATABASE_URL}}"
       - name: Build with Next.js
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
       - name: Static HTML export with Next.js
