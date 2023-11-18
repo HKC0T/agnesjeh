@@ -8,6 +8,7 @@ import {
   Landmark,
   Languages,
   Target,
+  Trash2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -44,17 +45,24 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { useSession } from "next-auth/react";
 import { Client, Job, Team } from "@prisma/client";
-import { useQuery, useMutation, useQueries } from "@tanstack/react-query";
+import {
+  useQuery,
+  useMutation,
+  useQueries,
+  QueryClient,
+  useQueryClient,
+} from "@tanstack/react-query";
 import axios from "axios";
-import { Label } from "@/components/ui/label";
 
 import { NewMemberDialog } from "./newMemberDialog";
 import SelectTeam from "./selectTeam";
 import NewJobForm from "./newJobForm";
-import { CandidateSubmitted } from "./candidateSubmitted";
 import NewCandidateForm from "./newCandidateForm";
 import { MemberCard } from "./memberCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { UserWithCandidateSubmitted } from "./userWithCandidateSubmitted";
+import { JobsWithCreatedBy } from "@/app/api/jobs/[...teamId]/route";
+import { UserWithCandidates } from "@/app/api/candidates/[...jobId]/route";
 
 export function TeamHeader() {
   const [selectedTeam, setSelectedTeam] = React.useState("");
@@ -69,7 +77,7 @@ export function TeamHeader() {
     return session!.user.adminOf.some(({ id }) => id === selectedTeam);
   }, [selectedTeam, session]);
   //need invalidate after teams or edit
-
+  const queryClient = useQueryClient();
   const { data: teams, status: teamQueryStatus } = useQuery({
     queryKey: ["teams", session?.user.id],
 
@@ -95,6 +103,15 @@ export function TeamHeader() {
       return response.data;
     },
     enabled: !!selectedTeam,
+  });
+  const { mutate: deleteJob, status: deleteStatus } = useMutation({
+    mutationFn: (id: String) => {
+      console.log(id);
+      return axios.post(`/api/jobs/teamId/${selectedTeam}`, { jobId: id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs", selectedTeam] });
+    },
   });
 
   const { data: candidatesQuery, status: candidatesStatus } = useQuery({
@@ -192,7 +209,7 @@ export function TeamHeader() {
                         {jobsQuery.length > 0 ? (
                           <div className="grid grid-flow-row grid-cols-1 gap-4 p-2">
                             {queryStatus === "success" ? (
-                              jobsQuery.map((job: Job) => {
+                              jobsQuery.map((job: JobsWithCreatedBy) => {
                                 const id = job.id;
 
                                 return (
@@ -210,14 +227,20 @@ export function TeamHeader() {
                                   >
                                     <Card>
                                       <CardHeader>
-                                        <div className="flex justify-between items-baseline">
+                                        <div className="flex justify-between items-center">
                                           <CardTitle className="text-xl">
                                             {job.role}
                                           </CardTitle>
                                           {session?.user?.email ===
                                           job.createdBy?.email ? (
                                             <>
-                                              <DropdownMenu>
+                                              <Trash2
+                                                className="hover:bg-accent h-10 w-10 p-2 rounded-md"
+                                                onClick={() =>
+                                                  deleteJob(job.id)
+                                                }
+                                              />
+                                              {/* <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                   <Button
                                                     variant="ghost"
@@ -227,7 +250,7 @@ export function TeamHeader() {
                                                   </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent
-                                                  className="w-56"
+                                                  className="w-4"
                                                   align="end"
                                                   forceMount
                                                 >
@@ -239,7 +262,7 @@ export function TeamHeader() {
                                                     </DropdownMenuItem>
                                                   </DropdownMenuGroup>
                                                 </DropdownMenuContent>
-                                              </DropdownMenu>
+                                              </DropdownMenu> */}
                                             </>
                                           ) : (
                                             <></>
@@ -373,13 +396,15 @@ export function TeamHeader() {
                           <CardContent>
                             <h1 className="font-bold text-xl">Candidates</h1>
                             {candidatesQuery &&
-                              candidatesQuery.map((user) => {
-                                return (
-                                  <Card key={user.email} className="p-2 mt-4">
-                                    <CandidateSubmitted user={user} />
-                                  </Card>
-                                );
-                              })}
+                              candidatesQuery.map(
+                                (user: UserWithCandidates) => {
+                                  return (
+                                    <Card key={user.email} className="p-2 mt-4">
+                                      <UserWithCandidateSubmitted user={user} />
+                                    </Card>
+                                  );
+                                }
+                              )}
                           </CardContent>
                           {/* <CardFooter className="flex justify-between">
                             <Button variant="outline">Cancel</Button>

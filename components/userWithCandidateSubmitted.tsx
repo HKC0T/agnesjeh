@@ -9,11 +9,16 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Job } from "@prisma/client";
+import { CandidateSubmitted, Job, Prisma } from "@prisma/client";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { UserWithCandidates } from "@/app/api/candidates/[...jobId]/route";
 
-export function CandidateSubmitted({ user }) {
+export function UserWithCandidateSubmitted({
+  user,
+}: {
+  user: UserWithCandidates;
+}) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (

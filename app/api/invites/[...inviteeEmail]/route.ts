@@ -1,6 +1,14 @@
 import prisma from "@/prisma/db";
 import { NextResponse, NextRequest } from "next/server";
 import { NextApiRequest, NextApiResponse } from "next";
+import { Prisma } from "@prisma/client";
+
+const invitesWithFrom = Prisma.validator<Prisma.InvitesInclude>()({
+  from: true,
+});
+export type Invites = Prisma.InvitesGetPayload<{
+  include: typeof invitesWithFrom;
+}>;
 
 export async function GET(
   req: Request,

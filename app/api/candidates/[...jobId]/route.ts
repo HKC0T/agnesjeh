@@ -1,21 +1,25 @@
 import prisma from "@/prisma/db";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
+const userWithCandidates = Prisma.validator<Prisma.UserInclude>()({
+  candidateSubmitted: true,
+});
+const userPersonalData = Prisma.validator<Prisma.UserSelect>()({
+  name: true,
+  email: true,
+});
+export type UserWithCandidates = Prisma.UserGetPayload<{
+  select: typeof userPersonalData;
+  include: typeof userWithCandidates;
+}>;
 export async function GET(
   req: Request,
   { params }: { params: { jobId: string } }
 ) {
   try {
     const jobId = params.jobId;
-    // const candidates = await prisma.candidateSubmitted.groupBy({
-    //   by: ["submittedBy"],
-    //   where: { jobId: String(jobId) },
-    //   _count: true,
-    // });
-    // const candidates = await prisma.candidateSubmitted.findMany({
-    //   where: { jobId: String(jobId) },
-    //   include: { user: true },
-    // });
+
     console.log("can get");
     const candidates = await prisma.user.findMany({
       select: {

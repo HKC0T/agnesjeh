@@ -1,6 +1,15 @@
 import prisma from "@/prisma/db";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
+const teamIncludeUserAdmin = Prisma.validator<Prisma.TeamInclude>()({
+  users: true,
+  admin: true,
+});
+
+export type teamIncludeUserAdmin = Prisma.TeamGetPayload<{
+  include: typeof teamIncludeUserAdmin;
+}>;
 export async function GET(
   req: Request,
   { params }: { params: { teamId: string } }

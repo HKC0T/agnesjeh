@@ -94,7 +94,8 @@ export default function NewCandidateForm({
               <DialogTitle>Add new candidate for {selected.role}</DialogTitle>
               <DialogDescription>
                 Enter candidate name and profile link here. Click add when
-                you're done.
+                you&#39;re done.
+                <p></p>
               </DialogDescription>
             </DialogHeader>
 

@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sample } from "./teamHeader";
 import { Session } from "next-auth";
 import { useState } from "react";
+import { teamIncludeUserAdmin } from "@/app/api/members/[...teamId]/route";
 
 export function MemberCard({
   selectedTeam,
@@ -30,7 +31,7 @@ export function MemberCard({
   selectedTeam: String;
   session: Session;
   isAdmin: Boolean;
-  membersQuery: any;
+  membersQuery: teamIncludeUserAdmin;
   membersStatus: "error" | "success" | "pending";
 }) {
   const queryClient = useQueryClient();
@@ -75,14 +76,14 @@ export function MemberCard({
           {isAdmin &&
             (edit ? (
               <Save
-                className="cursor-pointer"
+                className="cursor-pointer hover:bg-accent h-10 w-10 p-2 rounded-md"
                 onClick={() => {
                   setEdit(!edit);
                 }}
               />
             ) : (
               <UserCog2
-                className="cursor-pointer"
+                className="cursor-pointer hover:bg-accent h-10 w-10 p-2 rounded-md"
                 onClick={() => {
                   setEdit(!edit);
                 }}
@@ -132,7 +133,7 @@ export function MemberCard({
                     !(!(session.user.id === user.id) && edit)
                   }
                   onValueChange={(value) =>
-                    editMember({ userEmail: user.email, value })
+                    editMember({ userEmail: user.email!, value })
                   }
                 >
                   <SelectTrigger className="ml-auto w-[110px]">

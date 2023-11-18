@@ -37,7 +37,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import axios, { AxiosResponse } from "axios";
-import { Client, Team } from "@prisma/client";
+import { Client, JobStatus, Team } from "@prisma/client";
 import { Session } from "next-auth";
 import { useState } from "react";
 
@@ -121,7 +121,7 @@ export default function NewJobForm({
   function onSubmit(values: z.infer<typeof formSchema>) {
     addNewJob(values);
   }
-
+  console.log(newJobStatus);
   return (
     <>
       {teams && (
@@ -143,8 +143,8 @@ export default function NewJobForm({
                 {teams.find((team: Team) => team.id === selectedTeam)?.name}
               </DialogTitle>
               <DialogDescription>
-                Add new job to your team here. Click "Add new job" when you're
-                done.
+                Add new job to your team here. Click &quot;Add new job&quot;
+                when you&apos;re done.
               </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -300,7 +300,9 @@ export default function NewJobForm({
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit">Add new job</Button>
+                  <Button type="submit" disabled={newJobStatus === "pending"}>
+                    {newJobStatus === "pending" ? "Loading..." : "Add new job"}
+                  </Button>
                 </DialogFooter>
               </form>
             </Form>

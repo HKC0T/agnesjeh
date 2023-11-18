@@ -62,9 +62,7 @@ export function NewMemberDialog({
       email: "",
     },
   });
-  function onMemberSubmit(event: React.FormEvent<HTMLInputElement>) {
-    event.preventDefault();
-    console.log(member);
+  function onMemberSubmit() {
     addMember();
   }
   return (
@@ -83,10 +81,13 @@ export function NewMemberDialog({
             {teams.find((team: Team) => team.id === selectedTeam)?.name}
           </DialogTitle>
           <DialogDescription>
-            Enter user email here. Click add when you're done.
+            Enter user email here. Click add when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
-        <form className="grid gap-4 py-4" onSubmit={onMemberSubmit}>
+        <form
+          className="grid gap-4 py-4"
+          onSubmit={form.handleSubmit(onMemberSubmit)}
+        >
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Email
@@ -104,29 +105,5 @@ export function NewMemberDialog({
         </form>
       </DialogContent>
     </Dialog>
-    // <Dialog open={showNewMemberForm} onOpenChange={setShowNewMemberForm}>
-    //   <DialogTrigger asChild>
-    //     <Button variant="outline">Add new member</Button>
-    //   </DialogTrigger>
-    //   <DialogContent className="sm:max-w-[425px]">
-    //     <DialogHeader>
-    //       <DialogTitle>Add new member for {team.name}</DialogTitle>
-    //       <DialogDescription>
-    //         Enter user email here. Click add when you're done.
-    //       </DialogDescription>
-    //     </DialogHeader>
-    //     <div className="grid gap-4 py-4">
-    //       <div className="grid grid-cols-4 items-center gap-4">
-    //         <Label htmlFor="name" className="text-right">
-    //           Email
-    //         </Label>
-    //         <Input id="name" value={member} className="col-span-3" />
-    //       </div>
-    //     </div>
-    //     <DialogFooter>
-    //       <Button type="submit">Add</Button>
-    //     </DialogFooter>
-    //   </DialogContent>
-    // </Dialog>
   );
 }

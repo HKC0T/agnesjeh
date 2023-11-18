@@ -19,14 +19,20 @@ import axios from "axios";
 import { useSession } from "next-auth/react";
 import { sample } from "../teamHeader";
 import { cn } from "@/lib/utils";
+import { Invites } from "@/app/api/invites/[...inviteeEmail]/route";
 
 export function InvitesMenu() {
   const { data: session } = useSession();
   const email = session?.user.email;
   const queryClient = useQueryClient();
-  const { data: invites, status } = useQuery({
+
+  const {
+    data: invites,
+    status,
+    isSuccess,
+  } = useQuery({
     queryKey: ["invites", email],
-    queryFn: async () => {
+    queryFn: async (): Promise<Invites[]> => {
       const response = await axios.get(`/api/invites/${email}`);
       console.log(`inv req ${email}`);
 

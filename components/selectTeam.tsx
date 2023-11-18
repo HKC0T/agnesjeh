@@ -76,7 +76,7 @@ export default function SelectTeam({
     },
   });
 
-  function onTeamSubmit(event: React.FormEvent<HTMLInputElement>) {
+  function onTeamSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     newTeam();
@@ -154,7 +154,7 @@ export default function SelectTeam({
             Add a new team to manage jobs and candidates.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onTeamSubmit}>
+        <form onSubmit={(event) => onTeamSubmit(event)}>
           <div className="space-y-4 py-2 pb-4">
             <div className="space-y-2">
               <Label htmlFor="name">Team name</Label>

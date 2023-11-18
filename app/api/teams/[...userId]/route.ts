@@ -21,7 +21,9 @@ export async function GET(
       where: { id: String(userId) },
       select: { teams: true },
     });
-    return NextResponse.json(teams.teams, { status: 200 });
+    if (teams) {
+      return NextResponse.json(teams.teams, { status: 200 });
+    }
   } catch (error) {
     return NextResponse.json({ message: "failed." }, { status: 500 });
   }
