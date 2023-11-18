@@ -12,8 +12,7 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 #env
-env: 
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -80,6 +79,8 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Build with Next.js
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
+        env: 
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - name: Static HTML export with Next.js
         run: ${{ steps.detect-package-manager.outputs.runner }} next export
       - name: Upload artifact
