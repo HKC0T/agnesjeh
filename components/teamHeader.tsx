@@ -107,7 +107,7 @@ export function TeamHeader() {
   const { mutate: deleteJob, status: deleteStatus } = useMutation({
     mutationFn: (id: String) => {
       console.log(id);
-      return axios.post(`/api/jobs/teamId/${selectedTeam}`, { jobId: id });
+      return axios.post(`/api/jobs/${selectedTeam}`, { jobId: id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs", selectedTeam] });
